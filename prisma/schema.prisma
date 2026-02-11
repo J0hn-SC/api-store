@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum Role {
+  MANAGER
+  CLIENT
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PAYMENT_LINK
+  PAYMENT_INTENT
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            Role      @default(CLIENT)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  orders          Order[]
+  cart            Cart?
+  likedProducts   ProductLike[]
+  assignedOrders  Order[]   @relation("DeliveryAssigned")
+
+  resetToken      String?
+  resetTokenExp   DateTime?
+}
+
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Decimal  @db.Decimal(10,2)
+  stock       Int
+  disabled    Boolean  @default(false)
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  likedBy     ProductLike[]
+  cartItems   CartItem[]
+}
+
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  url       String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+}
+
+
+model ProductLike {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@id([userId, productId])
+}
+
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id])
+
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  quantity  Int
+
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+
+model Order {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+
+  status          OrderStatus   @default(PENDING)
+  totalAmount     Decimal       @db.Decimal(10,2)
+  paymentMethod   PaymentMethod?
+
+  promoCodeId     String?
+  promoCode       PromoCode?    @relation(fields: [promoCodeId], references: [id])
+
+  deliveryPersonId String?
+  deliveryPerson   User?        @relation("DeliveryAssigned", fields: [deliveryPersonId], references: [id])
+
+  stripeSessionId  String?
+  stripePaymentId  String?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  items            OrderItem[]
+  statusHistory    OrderStatusHistory[]
+}
+
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  productId  String
+
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal(10,2)
+
+  order      Order    @relation(fields: [orderId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+
+model OrderStatusHistory {
+  id        String       @id @default(uuid())
+  orderId   String
+  status    OrderStatus
+  changedBy String?      // userId
+  createdAt DateTime     @default(now())
+
+  order     Order        @relation(fields: [orderId], references: [id])
+}
+
+model PromoCode {
+  id               String       @id @default(uuid())
+  code             String       @unique
+  discountType     DiscountType
+  discountValue    Decimal      @db.Decimal(10,2)
+
+  expirationDate   DateTime
+  usageLimit       Int?
+  usageCount       Int          @default(0)
+
+  minimumPurchase  Decimal?     @db.Decimal(10,2)
+
+  active           Boolean      @default(true)
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  orders           Order[]
+}
