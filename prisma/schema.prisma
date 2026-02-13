@@ -62,12 +62,12 @@ model User {
 }
 
 model UserSession {
-  id             String    @id @default(uuid())
+  id             String    @id
   userId         String    
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tokenHash      String    @unique
-  expiresAt      DateTime
+  expiresAt      DateTime  @db.Timestamptz(3)
   createtAt      DateTime  @default(now())
 
   deviceInfo     String?   
@@ -79,14 +79,14 @@ model UserSession {
 }
 
 model PasswordReset {
-  id             String    @id @default(uuid())
+  id             String     @id @default(uuid())
   userId         String    
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  tokenHash      String    @unique
-  expiresAt      String
-  createdAt      DateTime    @default(now())
-  usedAt         DateTime?
+  tokenHash      String     @unique
+  expiresAt      DateTime   
+  createdAt      DateTime   @default(now())
+  usedAt         DateTime?  @db.Timestamptz(3)
 
   @@index([userId])
 }

@@ -16,4 +16,10 @@ export default () => ({
       limit: Number.parseInt(process.env.RATE_LIMIT_LIMIT as string, 10),
     }
   },
+  jwt: {
+    access_token: process.env.JWT_ACCESS_SECRET,
+    access_expires: process.env.JWT_ACCESS_EXPIRES,
+    refresh_token: process.env.JWT_REFRESH_SECRET,
+    refresh_expires: process.env.JWT_REFRESH_EXPIRES,
+  }
 });

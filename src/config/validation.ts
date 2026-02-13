@@ -20,4 +20,10 @@ export const validationSchema = Joi.object({
   
   // App Specific
   GLOBAL_PREFIX: Joi.string().default('api/v1'),
+
+  // Authentication
+  JWT_ACCESS_SECRET: Joi.string().required(),
+  JWT_ACCESS_EXPIRES: Joi.string().required(),
+  JWT_REFRESH_SECRET: Joi.string().required(),
+  JWT_REFRESH_EXPIRES: Joi.string().required(),
 });
