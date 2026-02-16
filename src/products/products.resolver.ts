@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, ResolveField, Parent } from '@nestjs/graphql';
 import { ProductsService } from './products.service';
 import { ProductEntity } from './entities/product.entity';
 import { CreateProductInput } from './dtos/inputs/create-product.input';
@@ -71,5 +71,11 @@ export class ProductsResolver {
         @Args({ name: 'file', type: () => GraphQLUpload }) file: any,
     ) {
         return this.productsService.attachImage(id, file);
+    }
+
+    @ResolveField(() => [ProductImageEntity])
+    async images(@Parent() product: ProductEntity) {
+        const { id } = product;
+        return this.productsService.getProductImages(id);
     }
 }

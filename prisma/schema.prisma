@@ -39,6 +39,13 @@ enum DiscountType {
   FIXED
 }
 
+enum EntityStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+  SUSPENDED
+}
+
 
 model User {
   id              String    @id @default(uuid())
@@ -99,12 +106,14 @@ model Product {
   price       Decimal  @db.Decimal(10,2)
   stock       Int
   disabled    Boolean  @default(false)
+  status      EntityStatus @default(ACTIVE)
 
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   images      ProductImage[]
   orderItems  OrderItem[]

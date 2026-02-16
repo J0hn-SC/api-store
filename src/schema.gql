@@ -19,11 +19,19 @@ type ProductEntity {
   description: String
   price: Float!
   stock: Int!
-  disabled: Boolean!
+  status: EntityStatus!
   categoryId: ID!
   category: CategoryEntity
   images: [ProductImageEntity!]
   likesCount: Int
+}
+
+"""Posible states for entities"""
+enum EntityStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+  SUSPENDED
 }
 
 type Query {
@@ -56,7 +64,7 @@ input CreateProductInput {
   description: String
   price: Float!
   stock: Int!
-  disabled: Boolean
+  status: EntityStatus = ACTIVE
   categoryId: String!
 }
 
@@ -65,7 +73,7 @@ input UpdateProductInput {
   description: String
   price: Float
   stock: Int
-  disabled: Boolean
+  status: EntityStatus = ACTIVE
   categoryId: String
   id: ID!
 }

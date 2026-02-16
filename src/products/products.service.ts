@@ -7,6 +7,7 @@ import { ProductFiltersInput } from './dtos/inputs/product-filters.input';
 import { PaginationInput } from './dtos/inputs/pagination.input';
 import { S3Service } from 'src/s3/s3.service';
 import { FileUpload } from 'graphql-upload-ts';
+import { EntityStatus } from './dtos/inputs/entity-status.input';
 
 @Injectable()
 export class ProductsService {
@@ -28,14 +29,14 @@ export class ProductsService {
     async disable(id: string) {
         return this.prisma.product.update({
             where: { id },
-            data: { disabled: true },
+            data: { status : EntityStatus.DISABLED },
         });
     }
 
     async delete(id: string) {
         return this.prisma.product.update({
             where: { id },
-            data: { disabled: false },
+            data: { deletedAt : Date() },
         });
     }
 
@@ -53,7 +54,7 @@ export class ProductsService {
         const where: any = {};
 
         if (role === Role.CLIENT) {
-            where.isActive = true;
+            where.status = EntityStatus.ACTIVE;
         }
 
         if (filters?.categoryId) where.categoryId = filters.categoryId;
@@ -107,5 +108,11 @@ export class ProductsService {
             }
             throw new InternalServerErrorException('Error al registrar imagen');
         }
+    }
+
+    async getProductImages(id: string){
+        return this.prisma.productImage.findMany({
+            where: { productId: id },
+        });
     }
 }

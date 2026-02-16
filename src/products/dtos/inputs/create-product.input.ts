@@ -1,5 +1,6 @@
 import { InputType, Field, Float, Int } from '@nestjs/graphql';
-import { IsString, IsNumber, IsInt, Min, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsInt, Min, IsBoolean, IsEnum, IsOptional } from 'class-validator';
+import { EntityStatus } from './entity-status.input';
 
 @InputType()
 export class CreateProductInput {
@@ -21,10 +22,13 @@ export class CreateProductInput {
     @Min(0)
     stock: number;
 
-    @Field({ nullable: true })
+    @Field(() => EntityStatus, { 
+        nullable: true,
+        defaultValue: EntityStatus.ACTIVE
+    })
     @IsOptional()
-    @IsBoolean()
-    disabled?: boolean;
+    @IsEnum(EntityStatus)
+    status?: EntityStatus;
 
     @Field()
     @IsString()

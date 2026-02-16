@@ -1,6 +1,7 @@
 import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
 import { CategoryEntity } from './category.entity';
 import { ProductImageEntity } from './product-image.entity';
+import { EntityStatus } from '../dtos/inputs/entity-status.input';
 
 @ObjectType()
 export class ProductEntity {
@@ -19,8 +20,8 @@ export class ProductEntity {
     @Field(() => Int)
     stock: number;
 
-    @Field()
-    disabled: boolean;
+    @Field(() => EntityStatus)
+    status: EntityStatus;
 
     @Field(() => ID)
     categoryId: string;
