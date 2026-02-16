@@ -95,7 +95,7 @@ model PasswordReset {
 model Product {
   id          String   @id @default(uuid())
   name        String
-  description String
+  description String?
   price       Decimal  @db.Decimal(10,2)
   stock       Int
   disabled    Boolean  @default(false)

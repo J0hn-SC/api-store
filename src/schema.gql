@@ -1,0 +1,69 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type CategoryEntity {
+  id: ID!
+  name: String!
+}
+
+type ProductImageEntity {
+  id: ID!
+  url: String!
+}
+
+type ProductEntity {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  disabled: Boolean!
+  categoryId: ID!
+  category: CategoryEntity
+  images: [ProductImageEntity!]
+  likesCount: Int
+}
+
+type Query {
+  products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
+  product(id: ID!): ProductEntity!
+}
+
+input ProductFiltersInput {
+  categoryId: String
+  minPrice: Float
+  maxPrice: Float
+  search: String
+}
+
+input PaginationInput {
+  limit: Int! = 10
+  offset: Int! = 0
+}
+
+type Mutation {
+  createProduct(input: CreateProductInput!): ProductEntity!
+  updateProduct(input: UpdateProductInput!): ProductEntity!
+  disableProduct(id: ID!): ProductEntity!
+  deleteProduct(id: ID!): ProductEntity!
+}
+
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  disabled: Boolean
+  categoryId: String!
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+  stock: Int
+  disabled: Boolean
+  categoryId: String
+  id: ID!
+}

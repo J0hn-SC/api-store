@@ -3,11 +3,15 @@ import { ConfigModule } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
-import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
+import { ProductsModule } from './products/products.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,7 +21,13 @@ import { CaslModule } from './casl/casl.module';
     }),
     PrismaModule,
     AuthModule,
-    CaslModule
+    CaslModule,
+    ProductsModule,
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      playground: true,
+    }),
   ],
   controllers: [],
   providers: [

@@ -1,0 +1,65 @@
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { ProductsService } from './products.service';
+import { ProductEntity } from './entities/product.entity';
+import { CreateProductInput } from './dtos/inputs/create-product.input';
+import { UpdateProductInput } from './dtos/inputs/update-product.input';
+import { PaginationInput } from './dtos/inputs/pagination.input';
+import { ProductFiltersInput } from './dtos/inputs/product-filters.input';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { Action } from 'src/casl/interfaces/casl.types';
+import { UseGuards } from '@nestjs/common';
+import { PoliciesGuard } from 'src/casl/guards/casl.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CheckPolicies } from 'src/casl/decorators/policies.decorator';
+
+
+@Resolver(() => ProductEntity)
+export class ProductsResolver {
+    constructor(private readonly productsService: ProductsService) {}
+
+    @Query(() => [ProductEntity])
+    async products(
+        @Args('filters', { nullable: true }) filters: ProductFiltersInput,
+        @Args('pagination') pagination: PaginationInput,
+        @CurrentUser() user,
+    ) {
+        return this.productsService.findAll(filters, pagination, user?.role);
+    }
+
+    @Query(() => ProductEntity)
+    async product(@Args('id', { type: () => ID }) id: string) {
+        return this.productsService.findById(id);
+    }
+
+    @Mutation(() => ProductEntity)
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies(ability => ability.can(Action.Create, 'Product'))
+    async createProduct(
+        @Args('input') input: CreateProductInput,
+    ) {
+        return this.productsService.create(input);
+    }
+
+    @Mutation(() => ProductEntity)
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies(ability => ability.can(Action.Update, 'Product'))
+    async updateProduct(
+        @Args('input') input: UpdateProductInput,
+    ) {
+        return this.productsService.update(input.id, input);
+    }
+
+    @Mutation(() => ProductEntity)
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies(ability => ability.can(Action.Update, 'Product'))
+    async disableProduct(@Args('id', { type: () => ID }) id: string) {
+        return this.productsService.disable(id);
+    }
+
+    @Mutation(() => ProductEntity)
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    @CheckPolicies(ability => ability.can(Action.Delete, 'Product'))
+    async deleteProduct(@Args('id', { type: () => ID }) id: string) {
+        return this.productsService.delete(id);
+    }
+}
