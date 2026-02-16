@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
+import { CaslModule } from './casl/casl.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,7 +16,8 @@ import { AuthModule } from './auth/auth.module';
       validationSchema,
     }),
     PrismaModule,
-    AuthModule
+    AuthModule,
+    CaslModule
   ],
   controllers: [],
   providers: [
