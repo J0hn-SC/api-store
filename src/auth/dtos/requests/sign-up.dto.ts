@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsIn } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsIn, IsOptional } from 'class-validator';
 
 export class SignUpDto {
 	@IsEmail()
@@ -6,11 +6,13 @@ export class SignUpDto {
 
 	@IsString()
 	@MinLength(2)
-	readonly firstName: string;
+	@IsOptional()
+	readonly firstName?: string;
 
 	@IsString()
 	@MinLength(2)
-	readonly lastName: string;
+	@IsOptional()
+	readonly lastName?: string;
 
 	@IsIn(['CLIENT', 'MANAGER', 'DELIVERY'])
   	role!: 'CLIENT' | 'MANAGER' | 'DELIVERY';

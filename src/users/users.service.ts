@@ -22,12 +22,9 @@ export class UsersService {
     
     async createUser(data: CreateUserDto): Promise<Partial<User>> {
         try {
-            const hashedPassword = await bcrypt.hash(data.password, 10);
-
             return await this.prisma.user.create({
                 data: {
                     ...data,
-                    password: hashedPassword,
                 },
                 select: {
                     id: true,

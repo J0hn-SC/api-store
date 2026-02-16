@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { SignUpDto } from './dtos/requests/signup.dto';
+import { SignUpDto } from './dtos/requests/sign-up.dto';
 import { AuthService } from './auth.service';
-import { SignInDto } from './dtos/requests/signin.dto';
+import { SignInDto } from './dtos/requests/sign-in.dto';
 import { RefreshTokenDto } from './dtos/requests/refresh-token.dto';
 import { ForgotPasswordDto } from './dtos/requests/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/requests/reset-password.dto';
@@ -16,14 +16,14 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @Public()
-    @Post('signup')
+    @Post('sign-up')
     signup(@Body() dto: SignUpDto) {
         return this.authService.signup(dto);
     }
 
     @Public()
     @UseGuards(LocalAuthGuard)
-    @Post('signin')
+    @Post('sign-in')
     signin(@Body() dto: SignInDto) {
         return this.authService.signin(dto);
     }
@@ -35,7 +35,7 @@ export class AuthController {
     }
 
     @Public()
-    @Post('signout')
+    @Post('sign-out')
     logout(@CurrentUser() user: any, @Body() dto: SignOutDto) {
         return this.authService.signOut(user.id, dto.refreshToken);
     }

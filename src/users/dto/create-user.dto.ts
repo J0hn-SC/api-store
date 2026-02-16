@@ -7,12 +7,12 @@ export class CreateUserDto {
 	@IsString()
     @IsOptional()
 	@MinLength(2)
-	readonly firstName: string;
+	readonly firstName?: string;
 
     @IsString()
     @IsOptional()
 	@MinLength(2)
-	readonly lastName: string;
+	readonly lastName?: string;
 
 	@IsIn(['CLIENT', 'MANAGER', 'DELIVERY'])
   	role!: 'CLIENT' | 'MANAGER' | 'DELIVERY';

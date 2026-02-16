@@ -2,12 +2,12 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
-import { SignUpDto } from './dtos/requests/signup.dto';
+import { SignUpDto } from './dtos/requests/sign-up.dto';
 import { AuthResponseDto } from './dtos/responses/auth-response.dto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import ms from 'ms';
-import { SignInDto } from './dtos/requests/signin.dto';
+import { SignInDto } from './dtos/requests/sign-in.dto';
 import crypto from 'crypto';
 import { RefreshTokenDto } from './dtos/requests/refresh-token.dto';
 
