@@ -10,6 +10,7 @@ type CategoryEntity {
 type ProductImageEntity {
   id: ID!
   url: String!
+  productId: String!
 }
 
 type ProductEntity {
@@ -47,6 +48,7 @@ type Mutation {
   updateProduct(input: UpdateProductInput!): ProductEntity!
   disableProduct(id: ID!): ProductEntity!
   deleteProduct(id: ID!): ProductEntity!
+  uploadProductImage(id: ID!, file: Upload!): ProductImageEntity!
 }
 
 input CreateProductInput {
@@ -67,3 +69,6 @@ input UpdateProductInput {
   categoryId: String
   id: ID!
 }
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload

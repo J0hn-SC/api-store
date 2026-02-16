@@ -7,4 +7,7 @@ export class ProductImageEntity {
 
     @Field()
     url: string;
+
+    @Field()
+    productId: string;
 }

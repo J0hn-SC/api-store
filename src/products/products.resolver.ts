@@ -11,7 +11,8 @@ import { UseGuards } from '@nestjs/common';
 import { PoliciesGuard } from 'src/casl/guards/casl.guard';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CheckPolicies } from 'src/casl/decorators/policies.decorator';
-
+import { GraphQLUpload, FileUpload } from 'graphql-upload-ts'
+import { ProductImageEntity } from './entities/product-image.entity';
 
 @Resolver(() => ProductEntity)
 export class ProductsResolver {
@@ -61,5 +62,14 @@ export class ProductsResolver {
     @CheckPolicies(ability => ability.can(Action.Delete, 'Product'))
     async deleteProduct(@Args('id', { type: () => ID }) id: string) {
         return this.productsService.delete(id);
+    }
+
+    @Mutation(() => ProductImageEntity)
+    @UseGuards(JwtAuthGuard, PoliciesGuard)
+    async uploadProductImage(
+        @Args('id', { type: () => ID }) id: string,
+        @Args({ name: 'file', type: () => GraphQLUpload }) file: any,
+    ) {
+        return this.productsService.attachImage(id, file);
     }
 }

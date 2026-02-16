@@ -4,6 +4,8 @@ import { Upload } from "@aws-sdk/lib-storage";
 import { UploadFileOptions } from './s3.types';
 import { ConfigService } from '@nestjs/config';
 import { extname } from 'node:path';
+import { ReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 
 @Injectable()
 export class S3Service {
@@ -26,7 +28,7 @@ export class S3Service {
 
 
     async uploadFile(
-        file: Buffer | ReadableStream,
+        file: Buffer | ReadStream | Readable,
         options: UploadFileOptions,
     ): Promise<string> {
 
