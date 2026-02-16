@@ -26,4 +26,11 @@ export const validationSchema = Joi.object({
   JWT_ACCESS_EXPIRES: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
   JWT_REFRESH_EXPIRES: Joi.string().required(),
+
+  // S3
+  AWS_S3_REGION: Joi.string().required(),
+  AWS_S3_ACCESS_KEY_ID: Joi.string().required(),
+  AWS_S3_SECRET_ACCESS_KEY: Joi.string().required(),
+  AWS_S3_BUCKET_NAME: Joi.string().required(),
+  AWS_S3_PUBLIC_URL: Joi.string().required(),
 });

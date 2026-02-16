@@ -21,5 +21,12 @@ export default () => ({
     access_expires: process.env.JWT_ACCESS_EXPIRES,
     refresh_token: process.env.JWT_REFRESH_SECRET,
     refresh_expires: process.env.JWT_REFRESH_EXPIRES,
+  },
+  s3: {
+    aws_s3_region: process.env.AWS_S3_REGION,
+    aws_s3_access_key_id: process.env.AWS_S3_ACCESS_KEY_ID,
+    aws_s3_secret_access_key: process.env.AWS_S3_SECRET_ACCESS_KEY,
+    aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME,
+    AWS_S3_PUBLIC_URL: process.env.AWS_S3_BUCKET_NAME,
   }
 });
