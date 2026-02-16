@@ -7,7 +7,7 @@ import { ForgotPasswordDto } from './dtos/requests/forgot-password.dto';
 import { ResetPasswordDto } from './dtos/requests/reset-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ChangePasswordDto } from './dtos/requests/change-password.dtos';
-import { SignOutDto } from './dtos/requests/signout.dto';
+import { SignOutDto } from './dtos/requests/sign-out.dto';
 import { Public } from './decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 

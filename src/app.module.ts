@@ -8,6 +8,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
+import { S3Module } from './s3/s3.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,7 +18,8 @@ import { CaslModule } from './casl/casl.module';
     }),
     PrismaModule,
     AuthModule,
-    CaslModule
+    CaslModule,
+    S3Module
   ],
   controllers: [],
   providers: [
