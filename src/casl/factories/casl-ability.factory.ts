@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AbilityBuilder, PureAbility } from '@casl/ability';
+import { AbilityBuilder, PureAbility, mongoQueryMatcher } from '@casl/ability';
 import { Action, AppAbility } from '../interfaces/casl.types';
 import { Role } from '@prisma/client';
 
@@ -41,6 +41,7 @@ export class CaslAbilityFactory {
     }
 
     return build({
+        conditionsMatcher: mongoQueryMatcher,
         detectSubjectType: (item) => item.constructor?.name || (item as any).__typename,
     });
   }

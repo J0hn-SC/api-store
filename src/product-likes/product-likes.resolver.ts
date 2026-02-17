@@ -12,7 +12,6 @@ export class ProductLikesResolver {
   constructor(private readonly likeService: ProductLikesService) {}
 
     @Mutation(() => ProductLikeEntity)
-    @UseGuards(JwtAuthGuard)
     @CheckPolicies(ability => ability.can(Action.Create, 'Like'))
     async likeProduct(
         @Args('productId', { type: () => ID }) productId: string,
@@ -22,7 +21,6 @@ export class ProductLikesResolver {
     }
 
     @Mutation(() => ProductLikeEntity)
-    @UseGuards(JwtAuthGuard)
     @CheckPolicies(ability => ability.can(Action.Delete, 'Like'))
     async unlikeProduct(
         @Args('productId', { type: () => ID }) productId: string,
@@ -41,7 +39,6 @@ export class ProductLikesResolver {
     }
 
     @Query(() => ProductLikeEntity)
-    @UseGuards(JwtAuthGuard)
     @CheckPolicies(ability => ability.can(Action.Read, 'Like'))
     async isProductLiked(
         @Args('productId', { type: () => ID }) productId: string,

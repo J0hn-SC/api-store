@@ -22,8 +22,9 @@ export class PoliciesGuard implements CanActivate {
         context.getHandler(),
       ) || [];
 
-    const ctx = GqlExecutionContext.create(context);
-    const req = ctx.getContext().req;
+    const req = context.getType<string>() === 'graphql' 
+      ? GqlExecutionContext.create(context).getContext().req 
+      : context.switchToHttp().getRequest();
     const user = req?.user;
 
     if (!user) return false;

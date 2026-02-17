@@ -11,21 +11,20 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     constructor(private readonly reflector: Reflector) {
         super();
     }
+    async canActivate(context: ExecutionContext) {
+        const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
 
-    canActivate(context: ExecutionContext) {
-        // Check if route is marked as Public
-        const isPublic = this.reflector.getAllAndOverride<boolean>(
-            'isPublic',
-            [context.getHandler(), context.getClass()],
-        );
-
-        if (isPublic) {
-            return true;
+        try {
+            await super.canActivate(context);
+            return true; 
+        } catch (error) {
+            if (isPublic) return true;
+            throw error;
         }
-
-        return super.canActivate(context);
     }
-
 
     getRequest(context: ExecutionContext) {
         // REST

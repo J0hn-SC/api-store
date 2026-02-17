@@ -37,7 +37,6 @@ export class ProductsResolver {
     }
 
     @Mutation(() => ProductEntity)
-    @UseGuards(JwtAuthGuard, PoliciesGuard)
     @CheckPolicies(ability => ability.can(Action.Create, 'Product'))
     async createProduct(
         @Args('input') input: CreateProductInput,
@@ -46,7 +45,6 @@ export class ProductsResolver {
     }
 
     @Mutation(() => ProductEntity)
-    @UseGuards(JwtAuthGuard, PoliciesGuard)
     @CheckPolicies(ability => ability.can(Action.Update, 'Product'))
     async updateProduct(
         @Args('input') input: UpdateProductInput,
@@ -55,21 +53,18 @@ export class ProductsResolver {
     }
 
     @Mutation(() => ProductEntity)
-    @UseGuards(JwtAuthGuard, PoliciesGuard)
     @CheckPolicies(ability => ability.can(Action.Update, 'Product'))
     async disableProduct(@Args('id', { type: () => ID }) id: string) {
         return this.productsService.disable(id);
     }
 
     @Mutation(() => ProductEntity)
-    @UseGuards(JwtAuthGuard, PoliciesGuard)
     @CheckPolicies(ability => ability.can(Action.Delete, 'Product'))
     async deleteProduct(@Args('id', { type: () => ID }) id: string) {
         return this.productsService.delete(id);
     }
 
     @Mutation(() => ProductImageEntity)
-    @UseGuards(JwtAuthGuard, PoliciesGuard)
     async uploadProductImage(
         @Args('id', { type: () => ID }) id: string,
         @Args({ name: 'file', type: () => GraphQLUpload }) file: any,
