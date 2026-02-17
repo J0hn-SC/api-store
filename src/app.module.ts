@@ -11,8 +11,9 @@ import { ProductsModule } from './products/products.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
-
 import { S3Module } from './s3/s3.module';
+import { ProductLikesModule } from './product-likes/product-likes.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,7 +30,8 @@ import { S3Module } from './s3/s3.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
     }),
-    S3Module
+    S3Module,
+    ProductLikesModule
   ],
   controllers: [],
   providers: [

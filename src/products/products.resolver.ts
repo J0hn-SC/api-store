@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID, ResolveField, Parent } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, ResolveField, Parent, Int } from '@nestjs/graphql';
 import { ProductsService } from './products.service';
 import { ProductEntity } from './entities/product.entity';
 import { CreateProductInput } from './dtos/inputs/create-product.input';
@@ -13,20 +13,24 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CheckPolicies } from 'src/casl/decorators/policies.decorator';
 import { GraphQLUpload, FileUpload } from 'graphql-upload-ts'
 import { ProductImageEntity } from './entities/product-image.entity';
+import { ProductLikesLoaderService } from 'src/product-likes/product-likes-loader.service';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Resolver(() => ProductEntity)
 export class ProductsResolver {
-    constructor(private readonly productsService: ProductsService) {}
+    constructor(private readonly productsService: ProductsService, private readonly productLikesLoaderService: ProductLikesLoaderService) {}
 
+    @Public()
     @Query(() => [ProductEntity])
     async products(
         @Args('filters', { nullable: true }) filters: ProductFiltersInput,
         @Args('pagination') pagination: PaginationInput,
-        @CurrentUser() user,
+        @CurrentUser() user?,
     ) {
         return this.productsService.findAll(filters, pagination, user?.role);
     }
 
+    @Public()
     @Query(() => ProductEntity)
     async product(@Args('id', { type: () => ID }) id: string) {
         return this.productsService.findById(id);
@@ -77,5 +81,19 @@ export class ProductsResolver {
     async images(@Parent() product: ProductEntity) {
         const { id } = product;
         return this.productsService.getProductImages(id);
+    }
+
+    @ResolveField(() => Int)
+    async likesCount(@Parent() product: ProductEntity) {
+        return this.productLikesLoaderService.batchLikes.load(product.id);
+    }
+
+    @ResolveField(() => Boolean)
+    async isLiked(
+        @Parent() product: ProductEntity,
+        @CurrentUser() user: any,
+    ): Promise<boolean> {
+        if (!user) return false;
+        return this.productLikesLoaderService.getIsLikedLoader(user.id).load(product.id);
     }
 }

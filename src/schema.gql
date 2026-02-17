@@ -24,6 +24,7 @@ type ProductEntity {
   category: CategoryEntity
   images: [ProductImageEntity!]
   likesCount: Int
+  isLiked: Boolean
 }
 
 """Posible states for entities"""
@@ -34,9 +35,16 @@ enum EntityStatus {
   SUSPENDED
 }
 
+type ProductLikeEntity {
+  userId: String!
+  productId: String!
+  createdAt: String!
+}
+
 type Query {
   products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
   product(id: ID!): ProductEntity!
+  isProductLiked(productId: ID!): ProductLikeEntity!
 }
 
 input ProductFiltersInput {
@@ -57,6 +65,9 @@ type Mutation {
   disableProduct(id: ID!): ProductEntity!
   deleteProduct(id: ID!): ProductEntity!
   uploadProductImage(id: ID!, file: Upload!): ProductImageEntity!
+  likeProduct(productId: ID!): ProductLikeEntity!
+  unlikeProduct(productId: ID!): ProductLikeEntity!
+  toggleLikeProduct(productId: ID!): ProductLikeEntity!
 }
 
 input CreateProductInput {

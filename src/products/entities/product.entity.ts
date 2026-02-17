@@ -34,4 +34,7 @@ export class ProductEntity {
 
     @Field(() => Int, { nullable: true })
     likesCount?: number;
+
+    @Field(() => Boolean, { nullable: true })
+    isLiked?: boolean;
 }
