@@ -51,6 +51,11 @@ enum DiscountType {
   FIXED
 }
 
+enum CartStatus {
+  ACTIVE
+  DISABLED
+}
+
 
 
 model User {
@@ -111,7 +116,6 @@ model Product {
   description String?
   price       Decimal  @db.Decimal(10,2)
   stock       Int
-  disabled    Boolean  @default(false)
   status      EntityStatus @default(ACTIVE)
 
   categoryId  String
@@ -160,8 +164,9 @@ model ProductLike {
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @unique
-  user      User       @relation(fields: [userId], references: [id])
+  status    CartStatus @default(ACTIVE)
 
+  user      User       @relation(fields: [userId], references: [id])
   items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt

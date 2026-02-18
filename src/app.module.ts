@@ -14,6 +14,7 @@ import { join } from 'path';
 import { S3Module } from './s3/s3.module';
 import { ProductLikesModule } from './product-likes/product-likes.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
+import { CartsModule } from './carts/carts.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { PromoCodesModule } from './promo-codes/promo-codes.module';
     }),
     S3Module,
     ProductLikesModule,
-    PromoCodesModule
+    PromoCodesModule,
+    CartsModule
   ],
   controllers: [],
   providers: [

@@ -72,12 +72,25 @@ enum PromoCodeStatus {
   DISABLED
 }
 
+type CartItemEntity {
+  id: ID!
+  productId: String!
+  quantity: Int!
+}
+
+type CartEntity {
+  id: ID!
+  userId: String!
+  items: [CartItemEntity!]
+}
+
 type Query {
   products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
   product(id: ID!): ProductEntity!
   isProductLiked(productId: ID!): ProductLikeEntity!
   promoCodes: [PromoCodeEntity!]!
   promoCode(id: ID!): PromoCodeEntity!
+  myCart: CartEntity!
 }
 
 input ProductFiltersInput {
@@ -104,6 +117,10 @@ type Mutation {
   createPromoCode(input: CreatePromoCodeInput!): PromoCodeEntity!
   updatePromoCode(input: UpdatePromoCodeInput!): PromoCodeEntity!
   disablePromoCode(id: ID!): PromoCodeEntity!
+  addToCart(input: AddToCartInput!): CartEntity!
+  updateCartItem(input: UpdateCartItemInput!): CartEntity!
+  removeCartItem(itemId: String!): CartEntity!
+  clearCart: CartEntity!
 }
 
 input CreateProductInput {
@@ -143,4 +160,14 @@ input UpdatePromoCodeInput {
   expirationDate: DateTime
   usageLimit: Int
   status: PromoCodeStatus = ACTIVE
+}
+
+input AddToCartInput {
+  productId: String!
+  quantity: Int!
+}
+
+input UpdateCartItemInput {
+  itemId: String!
+  quantity: Int!
 }
