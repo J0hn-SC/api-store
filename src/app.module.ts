@@ -13,6 +13,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { S3Module } from './s3/s3.module';
 import { ProductLikesModule } from './product-likes/product-likes.module';
+import { PromoCodesModule } from './promo-codes/promo-codes.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { ProductLikesModule } from './product-likes/product-likes.module';
       playground: true,
     }),
     S3Module,
-    ProductLikesModule
+    ProductLikesModule,
+    PromoCodesModule
   ],
   controllers: [],
   providers: [

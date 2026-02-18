@@ -41,10 +41,43 @@ type ProductLikeEntity {
   createdAt: String!
 }
 
+type PromoCodeEntity {
+  id: ID!
+  code: String!
+  discountType: DiscountType!
+  discountValue: Float!
+  expirationDate: DateTime
+  usageLimit: Int
+  usedCount: Int!
+  minimumPurchaseAmount: Float
+  status: PromoCodeStatus
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Posible states for entities"""
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Posible states for Promo Code Status"""
+enum PromoCodeStatus {
+  ACTIVE
+  DISABLED
+}
+
 type Query {
   products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
   product(id: ID!): ProductEntity!
   isProductLiked(productId: ID!): ProductLikeEntity!
+  promoCodes: [PromoCodeEntity!]!
+  promoCode(id: ID!): PromoCodeEntity!
 }
 
 input ProductFiltersInput {
@@ -68,6 +101,9 @@ type Mutation {
   likeProduct(productId: ID!): ProductLikeEntity!
   unlikeProduct(productId: ID!): ProductLikeEntity!
   toggleLikeProduct(productId: ID!): ProductLikeEntity!
+  createPromoCode(input: CreatePromoCodeInput!): PromoCodeEntity!
+  updatePromoCode(input: UpdatePromoCodeInput!): PromoCodeEntity!
+  disablePromoCode(id: ID!): PromoCodeEntity!
 }
 
 input CreateProductInput {
@@ -91,3 +127,20 @@ input UpdateProductInput {
 
 """The `Upload` scalar type represents a file upload."""
 scalar Upload
+
+input CreatePromoCodeInput {
+  code: String!
+  discountType: DiscountType!
+  discountValue: Float!
+  expirationDate: DateTime
+  usageLimit: Int
+  minimumPurchaseAmount: Float
+  status: PromoCodeStatus = ACTIVE
+}
+
+input UpdatePromoCodeInput {
+  id: ID!
+  expirationDate: DateTime
+  usageLimit: Int
+  status: PromoCodeStatus = ACTIVE
+}
