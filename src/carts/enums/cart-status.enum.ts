@@ -2,7 +2,8 @@ import { registerEnumType } from '@nestjs/graphql';
 
 export enum CartStatus {
   ACTIVE = 'ACTIVE',
-  DISABLED = 'DISABLED',
+  ORDERED = 'ORDERED',
+  ABANDONED = 'ABANDONED'
 }
 
 registerEnumType(CartStatus, {

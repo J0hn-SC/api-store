@@ -6,6 +6,7 @@ import { CartItemsLoaderService } from './cart-items-loader.service';
 
 @Module({
   imports: [PromoCodesModule],
-  providers: [CartsService, CartsResolver, CartItemsLoaderService]
+  providers: [CartsService, CartsResolver, CartItemsLoaderService],
+  exports: [CartsService]
 })
 export class CartsModule {}

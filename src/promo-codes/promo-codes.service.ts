@@ -4,6 +4,7 @@ import { CreatePromoCodeInput } from './input/create-promo-code.input';
 import { UpdatePromoCodeInput } from './input/update-promo-code.input';
 import { PromoCodeStatus } from './enums/promo-code-status.enum';
 import { DiscountType } from './enums/discount-type.enum';
+import { PromoCode } from '@prisma/client';
 
 @Injectable()
 export class PromoCodesService {
@@ -68,7 +69,7 @@ export class PromoCodesService {
         });
     }
 
-    async validatePromoCode( code: string) {
+    async validatePromoCode( code: string) : Promise<PromoCode> {
         const promo = await this.prisma.promoCode.findUnique({ where: { code } });
         if (!promo) 
             throw new NotFoundException('Promo code not valid');

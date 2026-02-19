@@ -31,7 +31,7 @@ enum OrderStatus {
 
 enum PaymentMethod {
   PAYMENT_LINK
-  PAYMENT_INTENT
+  PAYMENT_CUSTOM
 }
 
 enum EntityStatus {
@@ -53,7 +53,8 @@ enum DiscountType {
 
 enum CartStatus {
   ACTIVE
-  DISABLED
+  ORDERED
+  ABANDONED
 }
 
 
@@ -73,10 +74,26 @@ model User {
   sessions        UserSession[]
   passwordResets  PasswordReset[]
   orders          Order[]
+  addresses          Address[]
   cart            Cart?
   likedProducts   ProductLike[]
   assignedOrders  Order[]   @relation("DeliveryAssigned")
 
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  address     String
+  city        String
+  country     String
+  phoneNumber String?
+  postalCode  String?
+  
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model UserSession {
@@ -177,7 +194,6 @@ model PromoCode {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  orders           Order[]
   carts           Cart[]
 }
 
@@ -210,25 +226,30 @@ model CartItem {
 
 model Order {
   id              String        @id @default(uuid())
+  orderNumber     Int           @unique @default(autoincrement())
   userId          String
-  user            User          @relation(fields: [userId], references: [id])
-
   status          OrderStatus   @default(PENDING)
-  totalAmount     Decimal       @db.Decimal(10,2)
-  paymentMethod   PaymentMethod?
+  tax         Decimal         @db.Decimal(10,2)
+  subtotal    Decimal         @db.Decimal(10,2)
+  discount    Decimal         @db.Decimal(10,2)
+  total       Decimal         @db.Decimal(10,2)
+  currency     String          @default("USD")
+  
+  promoCodeSnapshot           String?
+  shippingAddressSnapshot     String?
 
-  promoCodeId     String?
-  promoCode       PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  paymentMethod       PaymentMethod?
+  paymentMethodType   String?
+  paymentIntentId     String?
+  paymentSessionId    String?
 
-  deliveryPersonId String?
-  deliveryPerson   User?        @relation("DeliveryAssigned", fields: [deliveryPersonId], references: [id])
-
-  stripeSessionId  String?
-  stripePaymentId  String?
+  deliveryUserId    String?
+  deliveryUser      User?        @relation("DeliveryAssigned", fields: [deliveryUserId], references: [id])
 
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
+  user            User          @relation(fields: [userId], references: [id])
   items            OrderItem[]
   statusHistory    OrderStatusHistory[]
 }
@@ -238,9 +259,10 @@ model OrderItem {
   id         String   @id @default(uuid())
   orderId    String
   productId  String
-
-  quantity   Int
-  unitPrice  Decimal  @db.Decimal(10,2)
+  nameAtPurchase       String
+  priceAtPurchase       Decimal  @db.Decimal(10,2)
+  quantity    Int
+  tax         Decimal  @db.Decimal(10,2)
 
   order      Order    @relation(fields: [orderId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])

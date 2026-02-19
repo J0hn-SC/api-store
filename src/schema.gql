@@ -99,6 +99,40 @@ type CartEntity {
   total: Float!
 }
 
+type OrderItemEntity {
+  id: String!
+  orderId: String!
+  productId: String!
+  quantity: Float!
+  nameAtPurchase: String!
+  priceAtPurchase: Float!
+  tax: Float!
+}
+
+type OrderEntity {
+  orderNumber: ID!
+  userId: String!
+  status: OrderStatus!
+  tax: Float!
+  subtotal: Float!
+  discount: Float!
+  total: Float!
+  currency: String!
+  promoCodeSnapshot: String
+  paymentMethodType: String
+  items: [OrderItemEntity!]!
+}
+
+"""Posible states for Order Status"""
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 type Query {
   products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
   product(id: ID!): ProductEntity!
@@ -106,6 +140,8 @@ type Query {
   promoCodes: [PromoCodeEntity!]!
   promoCode(id: ID!): PromoCodeEntity!
   myCart: CartEntity!
+  myOrders(filter: OrderFilterInput): [OrderEntity!]!
+  orders(filter: OrderFilterInput): [OrderEntity!]!
 }
 
 input ProductFiltersInput {
@@ -118,6 +154,14 @@ input ProductFiltersInput {
 input PaginationInput {
   limit: Int! = 10
   offset: Int! = 0
+}
+
+input OrderFilterInput {
+  status: String
+  fromDate: DateTime
+  toDate: DateTime
+  minTotal: Float
+  maxTotal: Float
 }
 
 type Mutation {
@@ -137,6 +181,11 @@ type Mutation {
   removeCartItem(itemId: String!): CartEntity!
   clearCart: CartEntity!
   validatePromoCode(code: String!): CartEntity!
+  createOrder(input: CreateOrderInput!): OrderEntity!
+  processOrder(id: ID!): OrderEntity!
+  shipOrder(id: ID!): OrderEntity!
+  cancelOrder(id: ID!): OrderEntity!
+  deliverOrder(id: ID!): OrderEntity!
 }
 
 input CreateProductInput {
@@ -186,4 +235,18 @@ input AddToCartInput {
 input UpdateCartItemInput {
   itemId: String!
   quantity: Int!
+}
+
+input CreateOrderInput {
+  code: String
+  addressId: String
+  newAddress: CreateAddressInput
+}
+
+input CreateAddressInput {
+  name: String
+  address: String!
+  country: String!
+  city: String!
+  phoneNumber: String
 }

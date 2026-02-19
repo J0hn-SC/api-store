@@ -106,6 +106,10 @@ export class CartsResolver {
             return subtotal
         }
         const discount = await this.discount(cart)
-        return subtotal.minus(discount)
+        const total = subtotal.minus(discount)
+        if(total.lessThan(0)){
+            return new Decimal(0)
+        }
+        return total
     }
 }

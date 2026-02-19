@@ -20,6 +20,22 @@ export class CartsService {
         return cart;
     }
 
+    async getActiveCart(userId: string) {
+        let cart = await this.prisma.cart.findFirst({
+            where: { userId, status: CartStatus.ACTIVE},
+            include: {items : {
+                include: {
+                    product: true
+                }
+            }}
+        });
+
+        if(cart)
+            return cart;
+
+        throw new NotFoundException('Cart Not Found')
+    }
+
     async addItem(userId: string, productId: string, quantity: number) {
 
         const product = await this.prisma.product.findUnique({
@@ -150,5 +166,12 @@ export class CartsService {
     async getPublicPromoCode(promoCodeId: string) {
         const promoCode = await this.promoCodeService.findById(promoCodeId)
         return promoCode
+    }
+
+    async markAsOrdered(cartId) {
+        return this.prisma.cart.update({
+            where: { id: cartId },
+            data: { status: CartStatus.ORDERED },
+        });
     }
 }
