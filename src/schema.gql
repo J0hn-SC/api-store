@@ -72,6 +72,15 @@ enum PromoCodeStatus {
   DISABLED
 }
 
+type PublicPromoCodeEntity {
+  id: ID!
+  code: String!
+  discountType: DiscountType!
+  discountValue: Float!
+  expirationDate: DateTime
+  minimumPurchaseAmount: Float
+}
+
 type CartItemEntity {
   id: ID!
   productId: String!
@@ -81,7 +90,13 @@ type CartItemEntity {
 type CartEntity {
   id: ID!
   userId: String!
+  promoCodeId: String!
   items: [CartItemEntity!]
+  itemsCount: Int!
+  promoCode: PublicPromoCodeEntity
+  subtotal: Float!
+  discount: Float!
+  total: Float!
 }
 
 type Query {
@@ -121,6 +136,7 @@ type Mutation {
   updateCartItem(input: UpdateCartItemInput!): CartEntity!
   removeCartItem(itemId: String!): CartEntity!
   clearCart: CartEntity!
+  validatePromoCode(code: String!): CartEntity!
 }
 
 input CreateProductInput {

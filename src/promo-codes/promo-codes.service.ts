@@ -67,4 +67,15 @@ export class PromoCodesService {
             data: { status: PromoCodeStatus.DISABLED },
         });
     }
+
+    async validatePromoCode( code: string) {
+        const promo = await this.prisma.promoCode.findUnique({ where: { code } });
+        if (!promo) 
+            throw new NotFoundException('Promo code not valid');
+        if(promo.expirationDate && promo.expirationDate < new Date())
+            throw new NotFoundException('Promo code not valid');
+        if(promo.usageLimit && promo.usageLimit <= promo.usageCount)
+            throw new NotFoundException('Promo code not valid');
+        return promo;
+    }
 }

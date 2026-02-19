@@ -160,16 +160,38 @@ model ProductLike {
   @@id([userId, productId])
 }
 
+model PromoCode {
+  id               String       @id @default(uuid())
+  code             String       @unique
+  discountType     DiscountType
+  discountValue    Decimal      @db.Decimal(10,2)
+
+  expirationDate   DateTime?
+  usageLimit       Int?
+  usageCount       Int          @default(0)
+
+  minimumPurchaseAmount  Decimal?     @db.Decimal(10,2)
+
+  status           PromoCodeStatus      @default(ACTIVE)
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  orders           Order[]
+  carts           Cart[]
+}
 
 model Cart {
-  id        String     @id @default(uuid())
-  userId    String     @unique
-  status    CartStatus @default(ACTIVE)
+  id        String          @id @default(uuid())
+  userId    String          @unique
+  status    CartStatus      @default(ACTIVE)
+  promoCodeId   String?
 
-  user      User       @relation(fields: [userId], references: [id])
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  user      User              @relation(fields: [userId], references: [id])
+  items         CartItem[]
+  promoCode     PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 }
 
 model CartItem {
@@ -183,6 +205,7 @@ model CartItem {
 
   @@unique([cartId, productId])
 }
+
 
 
 model Order {
@@ -234,22 +257,3 @@ model OrderStatusHistory {
   order     Order        @relation(fields: [orderId], references: [id])
 }
 
-model PromoCode {
-  id               String       @id @default(uuid())
-  code             String       @unique
-  discountType     DiscountType
-  discountValue    Decimal      @db.Decimal(10,2)
-
-  expirationDate   DateTime?
-  usageLimit       Int?
-  usageCount       Int          @default(0)
-
-  minimumPurchaseAmount  Decimal?     @db.Decimal(10,2)
-
-  status           PromoCodeStatus      @default(ACTIVE)
-
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-
-  orders           Order[]
-}

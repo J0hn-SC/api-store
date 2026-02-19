@@ -3,6 +3,7 @@ import { PromoCodesService } from './promo-codes.service';
 import { PromoCodesResolver } from './promo-codes.resolver';
 
 @Module({
-  providers: [PromoCodesService, PromoCodesResolver]
+  providers: [PromoCodesService, PromoCodesResolver],
+  exports: [PromoCodesService]
 })
 export class PromoCodesModule {}

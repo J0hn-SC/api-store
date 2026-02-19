@@ -2,10 +2,11 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CartStatus } from './enums/cart-status.enum';
 import { EntityStatus } from '@prisma/client';
+import { PromoCodesService } from 'src/promo-codes/promo-codes.service';
 
 @Injectable()
 export class CartsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService, private readonly promoCodeService: PromoCodesService) {}
 
     async getOrCreateActiveCart(userId: string) {
         let cart = await this.prisma.cart.findFirst({
@@ -130,5 +131,24 @@ export class CartsService {
         });
 
         return items;
+    }
+
+    async validatePromoCode(userId: string, code: string) {
+        const promoCode = await this.promoCodeService.validatePromoCode(code)
+        const cart = await this.getOrCreateActiveCart(userId);
+        if (promoCode) {
+            let newCart = await this.prisma.cart.update({
+                where: { id : cart.id },
+                data: { promoCodeId: promoCode.id },
+            });
+            return newCart
+            
+        }
+        return cart
+    }
+
+    async getPublicPromoCode(promoCodeId: string) {
+        const promoCode = await this.promoCodeService.findById(promoCodeId)
+        return promoCode
     }
 }
