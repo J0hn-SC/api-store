@@ -7,9 +7,9 @@ import { Type } from 'class-transformer';
 
 @ObjectType()
 export class OrderEntity {
-    // @Field()
-    // @IsUUID()
-    // id: string;
+    @Field()
+    @IsUUID()
+    id: string;
 
     @Field(() => ID)
     @IsNumber()
@@ -23,31 +23,31 @@ export class OrderEntity {
     @IsEnum(OrderStatus)
     status: string;
 
-    @Field() 
+    @Field()
     @IsNumber()
     @Min(0)
     tax: number;
 
-    @Field() 
+    @Field()
     @IsNumber()
     @Min(0)
     subtotal: number;
 
-    @Field() 
+    @Field()
     @IsNumber()
     @Min(0)
     discount: number;
 
-    @Field() 
+    @Field()
     @IsNumber()
     @IsPositive()
     total: number;
 
-    @Field() 
+    @Field()
     @IsString()
     currency: string;
 
-    @Field({ nullable: true }) 
+    @Field({ nullable: true })
     @IsOptional()
     @IsString()
     promoCodeSnapshot: string;
@@ -56,7 +56,7 @@ export class OrderEntity {
     // @IsEnum(PaymentMethod)
     // paymentMethod: string;
 
-    @Field({ nullable: true }) 
+    @Field({ nullable: true })
     @IsString()
     paymentMethodType?: string;
 
@@ -70,7 +70,7 @@ export class OrderEntity {
     // @IsString()
     // paymentSessionId?: string;
 
-    @Field(() => [OrderItemEntity]) 
+    @Field(() => [OrderItemEntity])
     @ValidateNested({ each: true })
     @Type(() => OrderItemEntity)
     @ArrayMinSize(1)

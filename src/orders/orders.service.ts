@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PromoCodesService } from 'src/promo-codes/promo-codes.service';
 import { CreateOrderInput } from './input/create-order.input';
 import { Decimal } from '@prisma/client/runtime/client';
-import { OrderStatus, PromoCode} from '@prisma/client';
+import { OrderStatus, PromoCode } from '@prisma/client';
 import { DiscountType } from 'src/promo-codes/enums/discount-type.enum';
 import { OrderFilterInput } from './input/order-filter.input';
 
@@ -14,7 +14,7 @@ export class OrdersService {
         private readonly prisma: PrismaService,
         private readonly cartsService: CartsService,
         private readonly promoService: PromoCodesService,
-    ) {}
+    ) { }
 
     private validateAddressInput(input: CreateOrderInput) {
         if (!input.addressId && !input.newAddress) {
@@ -65,10 +65,10 @@ export class OrdersService {
         const address = await this.resolveAddress(userId, input);
 
         const subtotal = cart.items.reduce(
-            (acc, item) => item.product.price.times(item.quantity).plus(acc), 
+            (acc, item) => item.product.price.times(item.quantity).plus(acc),
             new Decimal(0)
         );
-        
+
         const promoCode = await this.resolvePromoCode(input.code, cart.promoCodeId);
         const discount = this.calculateDiscount(subtotal, promoCode);
         const total = Decimal.max(0, subtotal.minus(discount));
@@ -97,7 +97,7 @@ export class OrdersService {
                 include: { items: true },
             });
 
-            await this.cartsService.markAsOrdered(cart.id); 
+            await this.cartsService.markAsOrdered(cart.id);
 
             return order;
         });
@@ -117,7 +117,14 @@ export class OrdersService {
                     lte: filter?.toDate,
                 },
             },
-            include: { items: true },
+        });
+    }
+
+    async findItemsByOrderIds(orderIds: readonly string[]) {
+        return this.prisma.orderItem.findMany({
+            where: {
+                orderId: { in: [...orderIds] },
+            },
         });
     }
 
