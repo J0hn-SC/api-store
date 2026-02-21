@@ -1,12 +1,13 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CartsService } from 'src/carts/carts.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PromoCodesService } from 'src/promo-codes/promo-codes.service';
 import { CreateOrderInput } from './input/create-order.input';
 import { Decimal } from '@prisma/client/runtime/client';
-import { OrderStatus, PromoCode } from '@prisma/client';
+import { CartStatus, OrderStatus, PromoCode } from '@prisma/client';
 import { DiscountType } from 'src/promo-codes/enums/discount-type.enum';
 import { OrderFilterInput } from './input/order-filter.input';
+import { PaymentsService } from 'src/payments/payments.service';
 
 @Injectable()
 export class OrdersService {
@@ -14,6 +15,8 @@ export class OrdersService {
         private readonly prisma: PrismaService,
         private readonly cartsService: CartsService,
         private readonly promoService: PromoCodesService,
+        @Inject(forwardRef(() => PaymentsService))
+        private readonly paymentsService: PaymentsService,
     ) { }
 
     private validateAddressInput(input: CreateOrderInput) {
@@ -54,7 +57,7 @@ export class OrdersService {
     }
 
 
-    async createFromCart(userId: string, input: CreateOrderInput) {
+    async createOrder(userId: string, input: CreateOrderInput) {
         this.validateAddressInput(input);
 
         const cart = await this.cartsService.getActiveCart(userId);
@@ -73,7 +76,24 @@ export class OrdersService {
         const discount = this.calculateDiscount(subtotal, promoCode);
         const total = Decimal.max(0, subtotal.minus(discount));
 
-        return await this.prisma.$transaction(async (tx) => {
+        const order = await this.prisma.$transaction(async (tx) => {
+            
+            for (const item of cart.items) {
+                const updatedProduct = await tx.product.updateMany({
+                    where: {
+                        id: item.productId,
+                        stock: { gte: item.quantity }
+                    },
+                    data: {
+                        stock: { decrement: item.quantity }
+                    }
+                });
+
+                if (updatedProduct.count === 0) {
+                    throw new Error(`Lo sentimos, el producto ${item.product.name} ya no tiene stock suficiente.`);
+                }
+            }
+            
             const order = await tx.order.create({
                 data: {
                     userId,
@@ -97,10 +117,83 @@ export class OrdersService {
                 include: { items: true },
             });
 
-            await this.cartsService.markAsOrdered(cart.id);
+            await tx.cart.update({
+                where: { id: cart.id },
+                data: { status: CartStatus.ORDERED }
+            });
 
             return order;
         });
+
+        const paymentIntent = await this.paymentsService.createPaymentIntent(userId, order.id);
+
+        await this.prisma.order.update({
+            where: { id: order.id },
+            data: { paymentIntentId: paymentIntent.paymentIntentId }
+        });
+
+        return {
+            ...order,
+            clientSecret: paymentIntent.clientSecret,
+        };
+    }
+
+    async createSingleProductOrder(product: any, quantity: number, address: string, userId: string) {
+        const total = quantity * product.price;
+
+        const order = await this.prisma.$transaction(async (tx) => {
+            
+            const updateResult = await tx.product.updateMany({
+                where: {
+                    id: product.id,
+                    stock: { gte: quantity }
+                },
+                data: {
+                    stock: { decrement: quantity }
+                }
+            });
+
+            if (updateResult.count === 0) {
+                throw new Error(`There is no stock for product: ${product.name}`);
+            }
+
+            const newOrder = await tx.order.create({
+                data: {
+                    userId: userId? userId : null,
+                    status: OrderStatus.PENDING,
+                    subtotal: total,
+                    discount: 0,
+                    total: total,
+                    tax: 0,
+                    shippingAddressSnapshot: JSON.stringify(address),
+                    items: {
+                        create: [{
+                            productId: product.id,
+                            nameAtPurchase: product.name,
+                            priceAtPurchase: product.price,
+                            quantity: quantity,
+                            tax: 0
+                        }],
+                    },
+                },
+                include: { items: true },
+            });
+
+            return newOrder;
+        });
+
+        return order;
+    }
+
+    async attachSessionIdToOrder(orderId: string, sessionId: string) {
+        return this.prisma.order.update({
+            where: {
+                id: orderId,
+            },
+            data: {
+                paymentSessionId: sessionId
+            }
+        })
     }
 
     async findOrders(userId: string | undefined, filter?: OrderFilterInput) {

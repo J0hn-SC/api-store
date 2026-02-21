@@ -18,7 +18,7 @@ export class OrdersResolver {
         @CurrentUser() user,
         @Args('input') input: CreateOrderInput,
     ) {
-        return this.service.createFromCart(user.id, input);
+        return this.service.createOrder(user.id, input);
     }
 
     @CheckPolicies(ability => ability.can(Action.Create, 'Order'))

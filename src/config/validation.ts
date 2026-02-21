@@ -42,4 +42,8 @@ export const validationSchema = Joi.object({
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.string().required(),
   REDIS_PASSWORD: Joi.string().required(),
+  
+  // Stripe
+  STRIPE_SECRET_KEY: Joi.string().required(),
+  STRIPE_WEBHOOK_SECRET: Joi.string().required()
 });

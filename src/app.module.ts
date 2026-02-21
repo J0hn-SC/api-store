@@ -16,6 +16,7 @@ import { ProductLikesModule } from './product-likes/product-likes.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { CartsModule } from './carts/carts.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { MailModule } from './mail/mail.module';
 import { BullModule } from '@nestjs/bull';
 
@@ -60,6 +61,7 @@ import { BullModule } from '@nestjs/bull';
       inject: [ConfigService],
     }),
     MailModule,
+    PaymentsModule
   ],
   controllers: [],
   providers: [

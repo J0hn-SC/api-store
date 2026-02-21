@@ -37,5 +37,9 @@ export default () => ({
     redis_host: process.env.REDIS_HOST,
     redis_port: process.env.REDIS_PORT,
     redis_password: process.env.REDIS_PASSWORD,
+  },
+  stripe: {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   }
 });

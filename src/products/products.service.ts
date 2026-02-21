@@ -8,25 +8,70 @@ import { PaginationInput } from './dtos/inputs/pagination.input';
 import { S3Service } from 'src/s3/s3.service';
 import { FileUpload } from 'graphql-upload-ts';
 import { EntityStatus } from './dtos/inputs/entity-status.input';
+import { PaymentsService } from 'src/payments/payments.service';
+import { Decimal } from '@prisma/client/runtime/client';
 
 @Injectable()
 export class ProductsService {
-    constructor(private readonly prisma: PrismaService, private readonly s3Service: S3Service) {}
+    constructor(
+        private readonly prisma: PrismaService, 
+        private readonly s3Service: S3Service,
+        private readonly paymentsService: PaymentsService,
+    ) {}
 
     async create(input: CreateProductInput) {
+        const stripeData = await this.paymentsService.createSellableProduct({
+            name: input.name,
+            description: input.description,
+            price: Math.round(Number(input.price) * 100),
+            currency: 'usd',
+        })
         return this.prisma.product.create({
-            data: input,
+            data: {...input, 
+                stripeProductId: stripeData.productId, 
+                stripePriceId: stripeData.priceId, 
+            },
         });
     }
 
     async update(id: string, input: UpdateProductInput) {
+        const product = await this.prisma.product.findUnique({ where: { id } });
+        if (!product) throw new ConflictException('Product not found');
+
+        let stripeData;
+        const inputPrice = input.price ? new Decimal(input.price) : null;
+        if ((inputPrice && !inputPrice.eq(product.price ?? 0)) || 
+        ( input.name && input.name !== product.name)) {
+            stripeData = await this.paymentsService.updateSellableProduct({
+                productId: product.stripeProductId,
+                name: input.name ?? product.name,
+                description: input.description ? input.description : product.description,
+                price: Math.round(Number(input.price) * 100),
+                currency: 'usd',
+            });
+        }
+
         return this.prisma.product.update({
             where: { id },
-            data: input,
+            data: {
+                ...input,
+                ...(stripeData && {
+                    stripeProductId: stripeData.productId,
+                    stripePriceId: stripeData.priceId,
+                })
+            },
         });
     }
 
     async disable(id: string) {
+        const product = await this.prisma.product.findUnique({ where: { id } });
+        if (!product) throw new ConflictException('Product not found');
+
+        await this.paymentsService.disabledSellableProduct({
+            productId: product.stripeProductId, 
+            priceId: product.stripePriceId
+        })
+
         return this.prisma.product.update({
             where: { id },
             data: { status : EntityStatus.DISABLED },
@@ -34,6 +79,14 @@ export class ProductsService {
     }
 
     async delete(id: string) {
+        const product = await this.prisma.product.findUnique({ where: { id } });
+        if (!product) throw new ConflictException('Product not found');
+        
+        await this.paymentsService.disabledSellableProduct({
+            productId: product.stripeProductId, 
+            priceId: product.stripePriceId
+        })
+
         return this.prisma.product.update({
             where: { id },
             data: { deletedAt : Date() },
@@ -115,4 +168,5 @@ export class ProductsService {
             where: { productId: id },
         });
     }
+
 }
