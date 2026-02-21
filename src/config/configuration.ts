@@ -28,5 +28,9 @@ export default () => ({
     aws_s3_secret_access_key: process.env.AWS_S3_SECRET_ACCESS_KEY,
     aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME,
     AWS_S3_PUBLIC_URL: process.env.AWS_S3_BUCKET_NAME,
+  },
+  stripe: {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   }
 });

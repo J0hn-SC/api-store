@@ -41,6 +41,42 @@ type ProductLikeEntity {
   createdAt: String!
 }
 
+type OrderItemEntity {
+  id: String!
+  orderId: String!
+  productId: String!
+  quantity: Float!
+  nameAtPurchase: String!
+  priceAtPurchase: Float!
+  tax: Float!
+}
+
+type OrderEntity {
+  id: String!
+  orderNumber: ID!
+  userId: String!
+  status: OrderStatus!
+  tax: Float!
+  subtotal: Float!
+  discount: Float!
+  total: Float!
+  currency: String!
+  promoCodeSnapshot: String
+  paymentMethodType: String
+  items: [OrderItemEntity!]!
+  clientSecret: String
+}
+
+"""Posible states for Order Status"""
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 type PromoCodeEntity {
   id: ID!
   code: String!
@@ -99,49 +135,15 @@ type CartEntity {
   total: Float!
 }
 
-type OrderItemEntity {
-  id: String!
-  orderId: String!
-  productId: String!
-  quantity: Float!
-  nameAtPurchase: String!
-  priceAtPurchase: Float!
-  tax: Float!
-}
-
-type OrderEntity {
-  orderNumber: ID!
-  userId: String!
-  status: OrderStatus!
-  tax: Float!
-  subtotal: Float!
-  discount: Float!
-  total: Float!
-  currency: String!
-  promoCodeSnapshot: String
-  paymentMethodType: String
-  items: [OrderItemEntity!]!
-}
-
-"""Posible states for Order Status"""
-enum OrderStatus {
-  PENDING
-  PAID
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
-
 type Query {
   products(filters: ProductFiltersInput, pagination: PaginationInput!): [ProductEntity!]!
   product(id: ID!): ProductEntity!
   isProductLiked(productId: ID!): ProductLikeEntity!
-  promoCodes: [PromoCodeEntity!]!
-  promoCode(id: ID!): PromoCodeEntity!
-  myCart: CartEntity!
   myOrders(filter: OrderFilterInput): [OrderEntity!]!
   orders(filter: OrderFilterInput): [OrderEntity!]!
+  myCart: CartEntity!
+  promoCodes: [PromoCodeEntity!]!
+  promoCode(id: ID!): PromoCodeEntity!
 }
 
 input ProductFiltersInput {
@@ -173,19 +175,19 @@ type Mutation {
   likeProduct(productId: ID!): ProductLikeEntity!
   unlikeProduct(productId: ID!): ProductLikeEntity!
   toggleLikeProduct(productId: ID!): ProductLikeEntity!
-  createPromoCode(input: CreatePromoCodeInput!): PromoCodeEntity!
-  updatePromoCode(input: UpdatePromoCodeInput!): PromoCodeEntity!
-  disablePromoCode(id: ID!): PromoCodeEntity!
-  addToCart(input: AddToCartInput!): CartEntity!
-  updateCartItem(input: UpdateCartItemInput!): CartEntity!
-  removeCartItem(itemId: String!): CartEntity!
-  clearCart: CartEntity!
-  validatePromoCode(code: String!): CartEntity!
   createOrder(input: CreateOrderInput!): OrderEntity!
   processOrder(id: ID!): OrderEntity!
   shipOrder(id: ID!): OrderEntity!
   cancelOrder(id: ID!): OrderEntity!
   deliverOrder(id: ID!): OrderEntity!
+  addToCart(input: AddToCartInput!): CartEntity!
+  updateCartItem(input: UpdateCartItemInput!): CartEntity!
+  removeCartItem(itemId: String!): CartEntity!
+  clearCart: CartEntity!
+  validatePromoCode(code: String!): CartEntity!
+  createPromoCode(input: CreatePromoCodeInput!): PromoCodeEntity!
+  updatePromoCode(input: UpdatePromoCodeInput!): PromoCodeEntity!
+  disablePromoCode(id: ID!): PromoCodeEntity!
 }
 
 input CreateProductInput {
@@ -210,6 +212,30 @@ input UpdateProductInput {
 """The `Upload` scalar type represents a file upload."""
 scalar Upload
 
+input CreateOrderInput {
+  code: String
+  addressId: String
+  newAddress: CreateAddressInput
+}
+
+input CreateAddressInput {
+  name: String
+  address: String!
+  country: String!
+  city: String!
+  phoneNumber: String
+}
+
+input AddToCartInput {
+  productId: String!
+  quantity: Int!
+}
+
+input UpdateCartItemInput {
+  itemId: String!
+  quantity: Int!
+}
+
 input CreatePromoCodeInput {
   code: String!
   discountType: DiscountType!
@@ -225,28 +251,4 @@ input UpdatePromoCodeInput {
   expirationDate: DateTime
   usageLimit: Int
   status: PromoCodeStatus = ACTIVE
-}
-
-input AddToCartInput {
-  productId: String!
-  quantity: Int!
-}
-
-input UpdateCartItemInput {
-  itemId: String!
-  quantity: Int!
-}
-
-input CreateOrderInput {
-  code: String
-  addressId: String
-  newAddress: CreateAddressInput
-}
-
-input CreateAddressInput {
-  name: String
-  address: String!
-  country: String!
-  city: String!
-  phoneNumber: String
 }

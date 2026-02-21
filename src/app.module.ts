@@ -16,6 +16,7 @@ import { ProductLikesModule } from './product-likes/product-likes.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { CartsModule } from './carts/carts.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { OrdersModule } from './orders/orders.module';
     ProductLikesModule,
     PromoCodesModule,
     CartsModule,
-    OrdersModule
+    OrdersModule,
+    PaymentsModule
   ],
   controllers: [],
   providers: [

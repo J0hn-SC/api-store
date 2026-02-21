@@ -83,4 +83,7 @@ export class OrderEntity {
     // @Field() 
     // @IsDate()
     // updatedAt: Date;
+
+    @Field({ nullable: true }) // Importante: nullable porque no siempre existirá
+    clientSecret?: string;
 }

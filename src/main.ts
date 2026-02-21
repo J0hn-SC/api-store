@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 1 }));
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT');

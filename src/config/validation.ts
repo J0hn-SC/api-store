@@ -33,4 +33,8 @@ export const validationSchema = Joi.object({
   AWS_S3_SECRET_ACCESS_KEY: Joi.string().required(),
   AWS_S3_BUCKET_NAME: Joi.string().required(),
   AWS_S3_PUBLIC_URL: Joi.string().required(),
+
+  // Stripe
+  STRIPE_SECRET_KEY: Joi.string().required(),
+  STRIPE_WEBHOOK_SECRET: Joi.string().required()
 });
