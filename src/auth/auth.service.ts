@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
@@ -10,6 +10,10 @@ import ms from 'ms';
 import { SignInDto } from './dtos/requests/sign-in.dto';
 import crypto from 'crypto';
 import { RefreshTokenDto } from './dtos/requests/refresh-token.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { JwtPayload, JwtRefreshPayload } from './interfaces/payload-jwt.interface';
+import { MailerService } from '@nestjs-modules/mailer';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +22,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly usersService: UsersService,
+        private readonly mailService: MailService
     ) {}
 
     async validateUser(email: string, password: string) {
@@ -32,11 +37,48 @@ export class AuthService {
 
     async signup(input: SignUpDto) {
         const hashedPassword = await bcrypt.hash(input.password, 10);
-        await this.usersService.createUser({...input, password: hashedPassword});
+        const user = await this.usersService.createUser({...input, password: hashedPassword});
+        const token = await this.createEmailVerificationToken(user.id!);
+        const verificationUrl = `${this.configService.get('SERVER_HOST')}/auth/verify-email?token=${token}`;
+        await this.mailService.sendConfirmationEmail(user.firstName?? user.email!, user.email!, verificationUrl);
+    }
+
+    async createEmailVerificationToken(userId: string): Promise<string> {
+        const token = uuidv4();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        await this.prismaService.emailVerification.create({   
+            data: {
+                token: token,
+                userId,
+                expiresAt,
+            }
+        });
+
+        return token;
+    }
+
+    async verifyEmail(token: string) {
+        const verificationToken = await this.prismaService.emailVerification.findFirst({ where: { token: token } });
+
+        if (!verificationToken) {
+            throw new BadRequestException('Token inválido');
+        }
+
+        if (new Date() > verificationToken.expiresAt) {
+            throw new BadRequestException('El token ha expirado');
+        }
+
+        await this.usersService.markAsVerified(verificationToken.userId);
+
+        await this.prismaService.emailVerification.delete({ where: {id: verificationToken.id}});
+
+        return { message: 'Email verified' };
     }
 
     async generateAccessToken(userId: string) {
-        const payload = { sub: userId };
+        const payload : JwtPayload = { sub: userId };
 
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.get('JWT_ACCESS_SECRET'),
@@ -48,7 +90,7 @@ export class AuthService {
 
     async generateAndSaveRefreshToken(userId: string) {
         const sessionId = crypto.randomUUID();
-        const payload = { sub: userId, sid: sessionId };
+        const payload : JwtRefreshPayload = { sub: userId, sid: sessionId };
 
         const refreshExpiresInStr = this.configService.get('JWT_REFRESH_EXPIRES')
 
@@ -79,6 +121,10 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
+        if (!user.verified) {
+            throw new UnauthorizedException('Confirm your email. You should have received an email in your inbox, please confirm it');
+        }
+
         const isPasswordValid = await bcrypt.compare(
             input.password,
             user.password
@@ -101,7 +147,7 @@ export class AuthService {
 
     async refresh(input: RefreshTokenDto): Promise<AuthResponseDto> {
 
-        const payload = this.jwtService.verify(input.refreshToken, { 
+        const payload : JwtRefreshPayload = this.jwtService.verify(input.refreshToken, { 
             secret: this.configService.get('JWT_REFRESH_SECRET'),
         });
 
@@ -174,7 +220,8 @@ export class AuthService {
             },
         });
 
-        const resetUrl = `http://api-store.com/reset-password?token=${resetToken}`;
+        const resetUrl = `${this.configService.get('SERVER_HOST')}/auth/reset-password?token=${resetToken}`;
+        await this.mailService.sendResetPasswordEmail(user.email, resetUrl);
         
         return { resetUrl };
     }

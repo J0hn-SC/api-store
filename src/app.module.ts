@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
@@ -16,6 +16,9 @@ import { ProductLikesModule } from './product-likes/product-likes.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { CartsModule } from './carts/carts.module';
 import { OrdersModule } from './orders/orders.module';
+import { MailModule } from './mail/mail.module';
+import { BullModule } from '@nestjs/bull';
+
 
 @Module({
   imports: [
@@ -37,7 +40,26 @@ import { OrdersModule } from './orders/orders.module';
     ProductLikesModule,
     PromoCodesModule,
     CartsModule,
-    OrdersModule
+    OrdersModule,
+    // BullModule.forRoot({
+    //   redis: {
+    //     host: 'localhost',
+    //     port: 6379,
+    //   },
+    // }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          // En local será 'localhost', en Heroku será algo como 'redis-123.upstash.io'
+          host: configService.get('REDIS_HOST') || 'localhost',
+          port: configService.get('REDIS_PORT') || 6379,
+          password: configService.get('REDIS_PASSWORD'), // Importante para Redis Web
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    MailModule,
   ],
   controllers: [],
   providers: [

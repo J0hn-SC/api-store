@@ -4,6 +4,6 @@ import { PromoCodeEntity } from '../entities/promo-code.entity';
 
 @InputType()
 export class UpdatePromoCodeInput extends IntersectionType(
-  PickType(PromoCodeEntity, ['id'] as const, InputType), // Extraemos solo el ID
+  PickType(PromoCodeEntity, ['id'] as const, InputType),
   PartialType(PickType(CreatePromoCodeInput, ['expirationDate', 'usageLimit', 'status'] as const))
 ) {}

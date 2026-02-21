@@ -60,4 +60,13 @@ export class UsersService {
             },
         });
     }
+
+    async markAsVerified (userId: string) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                verified: true,
+            }
+        });
+    }
 }

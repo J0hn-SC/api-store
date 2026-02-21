@@ -17,7 +17,7 @@ export class OrderItemEntity {
 
     @Field() 
     @IsNumber()
-    @IsPositive() // La cantidad siempre debe ser mayor a 0
+    @IsPositive()
     quantity: number;
 
     @Field() 

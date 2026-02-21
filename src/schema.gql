@@ -110,6 +110,7 @@ type OrderItemEntity {
 }
 
 type OrderEntity {
+  id: String!
   orderNumber: ID!
   userId: String!
   status: OrderStatus!

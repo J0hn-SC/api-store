@@ -1,5 +1,6 @@
 export default () => ({
   port: Number.parseInt(process.env.PORT as string, 10) || 3000,
+  server_host: process.env.SERVER_HOST || "http://localhost:3000",
   database: {
     url: process.env.DB_URL ?? 
     `postgresql://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?schema=public`,
@@ -28,5 +29,13 @@ export default () => ({
     aws_s3_secret_access_key: process.env.AWS_S3_SECRET_ACCESS_KEY,
     aws_s3_bucket_name: process.env.AWS_S3_BUCKET_NAME,
     AWS_S3_PUBLIC_URL: process.env.AWS_S3_BUCKET_NAME,
+  },
+  brevo: {
+    brevo_pass: process.env.BREVO_PASS,
+  },
+  redis: {
+    redis_host: process.env.REDIS_HOST,
+    redis_port: process.env.REDIS_PORT,
+    redis_password: process.env.REDIS_PASSWORD,
   }
 });
