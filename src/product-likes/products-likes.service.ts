@@ -2,10 +2,11 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EntityStatus, Prisma } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class ProductLikesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly mailService: MailService) {}
 
     async find(userId: string, productId: string) {
         const product = await this.prisma.product.findUnique({
@@ -107,5 +108,39 @@ export class ProductLikesService {
             acc[like.productId] = true;
             return acc;
         }, {} as Record<string, boolean>);
+    }
+
+    async notifyLowStockToInterestedUsers(orderId: string) {
+        const order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+            include: { items: true }
+        });
+
+        if (!order) return;
+
+        for (const item of order.items) {
+            
+            const product = await this.prisma.product.findFirst({
+                where: { 
+                    id: item.productId, 
+                    stock: { lte: 3 } 
+                },
+                include: {
+                    images : true
+                }
+            });
+
+            if (!product) continue;
+
+            const productLikes = await this.prisma.productLike.findMany({
+                where: { productId: product.id },
+                include: { user: { select: { email: true } } }
+            });
+
+            if (productLikes.length === 0) continue;
+
+            const users = productLikes.map((like) => ({ email: like.user.email }));
+            await this.mailService.sendMassiveLowStockAlert(users, product);
+        }
     }
 }

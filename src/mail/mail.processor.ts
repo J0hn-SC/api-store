@@ -41,11 +41,10 @@ export class MailProcessor {
                     subject: `Only ${data.stock} units of ${data.productName} remain`,
                     template: './low-stock-alert',
                     context: {
-                        productName: data.productName,
-                        productDescription: data.productDescription,
-                        productImage: data.productImage,
+                        productName: data.name,
+                        productDescription: data.description,
+                        productImage: data.images[0].url,
                         stock: data.stock,
-                        productUrl: data.productUrl,
                     },
                 });
                 break;

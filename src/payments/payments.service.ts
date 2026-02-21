@@ -6,6 +6,7 @@ import { PaymentStatus } from './enums/payment-status.enum';
 import { CreatePaymentLinkDto } from './dtos/create-payment-link.dto';
 import { OrdersService } from 'src/orders/orders.service';
 import { OrderStatus } from '../orders/enums/order-status.enum';
+import { ProductLikesService } from 'src/product-likes/products-likes.service';
 
 
 @Injectable()
@@ -15,6 +16,8 @@ export class PaymentsService {
         private readonly stripeProvider: StripeProvider,
         @Inject(forwardRef(() => OrdersService))
         private readonly ordersService: OrdersService,
+        @Inject(forwardRef(() => OrdersService))
+        private readonly productLikesService: ProductLikesService,
     ) {}
 
     private provider(): PaymentProvider {
@@ -179,10 +182,12 @@ export class PaymentsService {
     private async paymentSucceeded(event: any) {
         const metadata = this.stripeProvider.getMetadata(event)
 
-        await this.prisma.order.update({
+        const order = await this.prisma.order.update({
             where: { id: metadata.orderId },
             data: { status: OrderStatus.PAID },
         });
+
+        await this.productLikesService.notifyLowStockToInterestedUsers(order.id)
     }
 
     private async paymentIntentFailed(event: any) {
