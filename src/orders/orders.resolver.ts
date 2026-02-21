@@ -8,6 +8,7 @@ import { Action } from '../casl/interfaces/casl.types';
 import { CheckPolicies } from '../casl/decorators/policies.decorator';
 import { OrderItemEntity } from './entities/order-item.entity';
 import { OrdersLoader } from './orders-loader.service';
+import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.interface';
 
 @Resolver(() => OrderEntity)
 export class OrdersResolver {
@@ -15,7 +16,7 @@ export class OrdersResolver {
 
     @Mutation(() => OrderEntity)
     createOrder(
-        @CurrentUser() user,
+        @CurrentUser() user: CurrentUserInterface,
         @Args('input') input: CreateOrderInput,
     ) {
         return this.service.createOrder(user.id, input);
@@ -24,7 +25,7 @@ export class OrdersResolver {
     @CheckPolicies(ability => ability.can(Action.Create, 'Order'))
     @Query(() => [OrderEntity])
     myOrders(
-        @CurrentUser() user,
+        @CurrentUser() user: CurrentUserInterface,
         @Args('filter', { nullable: true }) filter?: OrderFilterInput,
     ) {
         return this.service.findOrders(user.id, filter);
@@ -63,7 +64,7 @@ export class OrdersResolver {
 
     @Mutation(() => OrderEntity)
     @CheckPolicies(ability => ability.can(Action.Update, 'Order'))
-    deliverOrder(@CurrentUser() user, @Args('id', { type: () => ID }) id: string) {
+    deliverOrder(@CurrentUser() user: CurrentUserInterface, @Args('id', { type: () => ID }) id: string) {
         return this.service.deliverOrder(user.id, id);
     }
 

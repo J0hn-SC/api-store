@@ -22,15 +22,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 port: 587,
                 secure: false,
                 auth: {
-                user: 'john.41258789@gmail.com',
-                pass: configService.get<string>('PASS'),
+                    user: 'a2f26a001@smtp-brevo.com',
+                    pass: configService.get<string>('BREVO_PASS'),
                 },
+                tls: {
+                    rejectUnauthorized: false,
+                    ciphers: 'SSLv3'
+                }
             },
             defaults: {
-                from: '"Store" <john.41258789@gmail.com>',
+                from: '"john" <john.41258789@gmail.com>',
             },
             template: {
-                dir: join(__dirname, 'templates'),
+                dir: join(process.cwd(), 'src/mail/templates'),
                 adapter: new HandlebarsAdapter(),
                 options: {
                     strict: true,

@@ -10,6 +10,7 @@ import { CartItemsLoaderService } from './cart-items-loader.service';
 import { Decimal } from '@prisma/client/runtime/client';
 import { DiscountType } from 'src/promo-codes/enums/discount-type.enum';
 import { PublicPromoCodeEntity } from '../promo-codes/entities/public-promo-code.entity';
+import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.interface';
 
 @Resolver(() => CartEntity)
 export class CartsResolver {
@@ -17,14 +18,14 @@ export class CartsResolver {
 
     @CheckPolicies(ability => ability.can(Action.Read, 'Cart'))
     @Query(() => CartEntity)
-    async myCart(@CurrentUser() user) {
+    async myCart(@CurrentUser() user: CurrentUserInterface) {
         return this.cartService.getMyCart(user.id);
     }
 
     @CheckPolicies(ability => ability.can(Action.Update, 'Cart'))
     @Mutation(() => CartEntity)
     async addToCart(
-        @CurrentUser() user,
+        @CurrentUser() user: CurrentUserInterface,
         @Args('input') input: AddToCartInput,
     ) {
         return await this.cartService.addItem(user.id, input.productId, input.quantity);
@@ -33,7 +34,7 @@ export class CartsResolver {
     @CheckPolicies(ability => ability.can(Action.Update, 'Cart'))
     @Mutation(() => CartEntity)
     async updateCartItem(
-        @CurrentUser() user,
+        @CurrentUser() user: CurrentUserInterface,
         @Args('input') input: UpdateCartItemInput,
     ) {
         await this.cartService.updateItem(user.id, input.itemId, input.quantity);
@@ -43,7 +44,7 @@ export class CartsResolver {
     @CheckPolicies(ability => ability.can(Action.Update, 'Cart'))
     @Mutation(() => CartEntity)
     async removeCartItem(
-        @CurrentUser() user,
+        @CurrentUser() user: CurrentUserInterface,
         @Args('itemId') itemId: string,
     ) {
         return this.cartService.removeItem(user.id, itemId);
@@ -51,13 +52,13 @@ export class CartsResolver {
 
     @CheckPolicies(ability => ability.can(Action.Update, 'Cart'))
     @Mutation(() => CartEntity)
-    async clearCart(@CurrentUser() user) {
+    async clearCart(@CurrentUser() user: CurrentUserInterface) {
         return this.cartService.clearCart(user.id);
     }
 
     @CheckPolicies(ability => ability.can(Action.Update, 'Cart'))
     @Mutation(() => CartEntity)
-    async validatePromoCode(@CurrentUser() user, @Args('code') code: string) {
+    async validatePromoCode(@CurrentUser() user: CurrentUserInterface, @Args('code') code: string) {
         return this.cartService.validatePromoCode(user.id, code);
     }
 

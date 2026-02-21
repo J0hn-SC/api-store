@@ -10,6 +10,7 @@ import { ChangePasswordDto } from './dtos/requests/change-password.dtos';
 import { SignOutDto } from './dtos/requests/sign-out.dto';
 import { Public } from './decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -59,7 +60,7 @@ export class AuthController {
     }
 
     @Post('change-password')
-    changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
+    changePassword(@CurrentUser() user: CurrentUserInterface, @Body() dto: ChangePasswordDto) {
         return this.authService.changePassword(
             user.id,
             dto.currentPassword,

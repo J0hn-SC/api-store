@@ -7,14 +7,13 @@ import { PaginationInput } from './dtos/inputs/pagination.input';
 import { ProductFiltersInput } from './dtos/inputs/product-filters.input';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { Action } from 'src/casl/interfaces/casl.types';
-import { UseGuards } from '@nestjs/common';
-import { PoliciesGuard } from 'src/casl/guards/casl.guard';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CheckPolicies } from 'src/casl/decorators/policies.decorator';
-import { GraphQLUpload, FileUpload } from 'graphql-upload-ts'
+import { GraphQLUpload } from 'graphql-upload-ts'
 import { ProductImageEntity } from './entities/product-image.entity';
 import { ProductLikesLoaderService } from 'src/product-likes/product-likes-loader.service';
 import { Public } from '../auth/decorators/public.decorator';
+import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.interface';
+
 
 @Resolver(() => ProductEntity)
 export class ProductsResolver {
@@ -86,7 +85,7 @@ export class ProductsResolver {
     @ResolveField(() => Boolean)
     async isLiked(
         @Parent() product: ProductEntity,
-        @CurrentUser() user: any,
+        @CurrentUser() user: CurrentUserInterface,
     ): Promise<boolean> {
         if (!user) return false;
         return this.productLikesLoaderService.getIsLikedLoader(user.id).load(product.id);
