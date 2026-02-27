@@ -17,7 +17,7 @@ import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.inte
 
 @Resolver(() => ProductEntity)
 export class ProductsResolver {
-    constructor(private readonly productsService: ProductsService, private readonly productLikesLoaderService: ProductLikesLoaderService) {}
+    constructor(private readonly productsService: ProductsService, private readonly productLikesLoaderService: ProductLikesLoaderService) { }
 
     @Public()
     @Query(() => [ProductEntity])
@@ -64,6 +64,7 @@ export class ProductsResolver {
     }
 
     @Mutation(() => ProductImageEntity)
+    @CheckPolicies(ability => ability.can(Action.Update, 'Product'))
     async uploadProductImage(
         @Args('id', { type: () => ID }) id: string,
         @Args({ name: 'file', type: () => GraphQLUpload }) file: any,

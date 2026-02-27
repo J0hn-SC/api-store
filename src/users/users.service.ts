@@ -6,7 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) { }
 
     async findByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({
@@ -19,7 +19,7 @@ export class UsersService {
             where: { id },
         });
     }
-    
+
     async createUser(data: CreateUserDto): Promise<Partial<User>> {
         try {
             return await this.prisma.user.create({
@@ -43,25 +43,8 @@ export class UsersService {
     }
 
 
-    async updatePassword(userId: string, newPassword: string): Promise<Partial<User>>  {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        return this.prisma.user.update({
-            where: { id: userId },
-            data: {
-                password: hashedPassword,
-            },
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                role: true,
-            },
-        });
-    }
-
-    async markAsVerified (userId: string) {
+    async markAsVerified(userId: string) {
         return this.prisma.user.update({
             where: { id: userId },
             data: {

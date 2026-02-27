@@ -1,12 +1,12 @@
 
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { EntityStatus, Prisma } from '@prisma/client';
+import { EntityStatus, Prisma, OrderStatus } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class ProductLikesService {
-  constructor(private readonly prisma: PrismaService, private readonly mailService: MailService) {}
+    constructor(private readonly prisma: PrismaService, private readonly mailService: MailService) { }
 
     async find(userId: string, productId: string) {
         const product = await this.prisma.product.findUnique({
@@ -31,7 +31,7 @@ export class ProductLikesService {
     }
 
     async likeProduct(userId: string, productId: string) {
-        try{
+        try {
             return await this.prisma.productLike.create({
                 data: {
                     userId,
@@ -51,11 +51,12 @@ export class ProductLikesService {
     async unlikeProduct(userId: string, productId: string) {
         try {
             return await this.prisma.productLike.delete({
-                where: { 
+                where: {
                     userId_productId: {
                         userId,
                         productId,
-                }, },
+                    },
+                },
             });
         } catch (error) {
             if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -65,7 +66,7 @@ export class ProductLikesService {
             }
             throw new NotFoundException('Like does not exists or it has been already deleted');
         }
-        
+
 
     }
 
@@ -119,14 +120,14 @@ export class ProductLikesService {
         if (!order) return;
 
         for (const item of order.items) {
-            
+
             const product = await this.prisma.product.findFirst({
-                where: { 
-                    id: item.productId, 
-                    stock: { lte: 3 } 
+                where: {
+                    id: item.productId,
+                    stock: { lte: 3 }
                 },
                 include: {
-                    images : true
+                    images: true
                 }
             });
 
@@ -134,13 +135,43 @@ export class ProductLikesService {
 
             const productLikes = await this.prisma.productLike.findMany({
                 where: { productId: product.id },
-                include: { user: { select: { email: true } } }
+                include: { user: { select: { id: true, email: true } } }
             });
 
             if (productLikes.length === 0) continue;
 
-            const users = productLikes.map((like) => ({ email: like.user.email }));
-            await this.mailService.sendMassiveLowStockAlert(users, product);
+            const successfulOrders = await this.prisma.orderItem.findMany({
+                where: {
+                    productId: product.id,
+                    order: {
+                        status: {
+                            in: [
+                                OrderStatus.PAID,
+                                OrderStatus.PROCESSING,
+                                OrderStatus.SHIPPED,
+                                OrderStatus.DELIVERED,
+                            ],
+                        },
+                    },
+                },
+                select: {
+                    order: {
+                        select: {
+                            userId: true,
+                        },
+                    },
+                },
+            });
+
+            const purchaserIds = new Set(successfulOrders.map((o) => o.order.userId).filter(id => !!id));
+
+            const usersToNotify = productLikes
+                .filter((like) => !purchaserIds.has(like.userId))
+                .map((like) => ({ email: like.user.email }));
+
+            if (usersToNotify.length === 0) continue;
+
+            await this.mailService.sendMassiveLowStockAlert(usersToNotify, product);
         }
     }
 }

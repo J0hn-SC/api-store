@@ -11,10 +11,11 @@ import { SignOutDto } from './dtos/requests/sign-out.dto';
 import { Public } from './decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import type { CurrentUserInterface } from 'src/auth/interfaces/current-user.interface';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService) { }
 
     @Public()
     @Post('sign-up')
@@ -54,6 +55,7 @@ export class AuthController {
     }
 
     @Public()
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @Post('reset-password')
     resetPassword(@Body() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto.token, dto.newPassword);

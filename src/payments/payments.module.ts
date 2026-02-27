@@ -4,6 +4,7 @@ import { PaymentsController } from './payments.controller';
 import { StripeProvider } from './providers/stripe/stripe.provider';
 import { OrdersModule } from 'src/orders/orders.module';
 import { ProductLikesModule } from 'src/product-likes/product-likes.module';
+import { PaymentsLoader } from './payments-loader.service';
 
 @Module({
   imports: [forwardRef(() => OrdersModule), ProductLikesModule],
@@ -11,7 +12,8 @@ import { ProductLikesModule } from 'src/product-likes/product-likes.module';
   providers: [
     PaymentsService,
     StripeProvider,
+    PaymentsLoader
   ],
-  exports: [PaymentsService],
+  exports: [PaymentsService, PaymentsLoader],
 })
-export class PaymentsModule {}
+export class PaymentsModule { }

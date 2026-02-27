@@ -7,15 +7,15 @@ export class SignUpDto {
 	@IsString()
 	@MinLength(2)
 	@IsOptional()
-	readonly firstName?: string;
+	readonly firstName!: string;
 
 	@IsString()
 	@MinLength(2)
 	@IsOptional()
-	readonly lastName?: string;
+	readonly lastName!: string;
 
 	@IsIn(['CLIENT', 'MANAGER', 'DELIVERY'])
-  	role!: 'CLIENT' | 'MANAGER' | 'DELIVERY';
+	role!: 'CLIENT' | 'MANAGER' | 'DELIVERY';
 
 	@IsString()
 	@MinLength(8)

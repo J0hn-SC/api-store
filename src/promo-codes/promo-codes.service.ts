@@ -8,19 +8,19 @@ import { PromoCode } from '@prisma/client';
 
 @Injectable()
 export class PromoCodesService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) { }
 
     async create(input: CreatePromoCodeInput) {
         if (!input.expirationDate && !input.usageLimit) {
             throw new BadRequestException('A promo code must have at least an expiration date or a usage limit to prevent infinite abuse.');
         }
 
-        if(input.discountType === DiscountType.PERCENTAGE && input.discountValue > 100) {
+        if (input.discountType === DiscountType.PERCENTAGE && input.discountValue > 100) {
             throw new BadRequestException('For Percentage Discount, the discount value must be between 0 and 100');
         }
 
-        return this.prisma.promoCode.create({ 
-            data: {...input, usageCount: 0}
+        return this.prisma.promoCode.create({
+            data: { ...input, usageCount: 0 }
         });
     }
 
@@ -69,14 +69,19 @@ export class PromoCodesService {
         });
     }
 
-    async validatePromoCode( code: string) : Promise<PromoCode> {
+    async validatePromoCode(code: string, amount?: number | any): Promise<PromoCode> {
         const promo = await this.prisma.promoCode.findUnique({ where: { code } });
-        if (!promo) 
+        if (!promo)
             throw new NotFoundException('Promo code not valid');
-        if(promo.expirationDate && promo.expirationDate < new Date())
+        if (promo.expirationDate && promo.expirationDate < new Date())
             throw new NotFoundException('Promo code not valid');
-        if(promo.usageLimit && promo.usageLimit <= promo.usageCount)
+        if (promo.usageLimit && promo.usageLimit <= promo.usageCount)
             throw new NotFoundException('Promo code not valid');
+
+        if (promo.minimumPurchaseAmount && amount && Number(amount) < Number(promo.minimumPurchaseAmount)) {
+            throw new BadRequestException(`Minimum purchase amount of ${promo.minimumPurchaseAmount} is required to use this promo code.`);
+        }
+
         return promo;
     }
 }

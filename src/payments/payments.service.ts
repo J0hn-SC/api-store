@@ -7,6 +7,8 @@ import { CreatePaymentLinkDto } from './dtos/create-payment-link.dto';
 import { OrdersService } from 'src/orders/orders.service';
 import { OrderStatus } from '../orders/enums/order-status.enum';
 import { ProductLikesService } from 'src/product-likes/products-likes.service';
+import { Decimal } from '@prisma/client/runtime/client';
+import { CartStatus } from '@prisma/client';
 
 
 @Injectable()
@@ -16,24 +18,17 @@ export class PaymentsService {
         private readonly stripeProvider: StripeProvider,
         @Inject(forwardRef(() => OrdersService))
         private readonly ordersService: OrdersService,
-        @Inject(forwardRef(() => OrdersService))
         private readonly productLikesService: ProductLikesService,
-    ) {}
+    ) { }
 
     private provider(): PaymentProvider {
         return this.stripeProvider;
     }
 
-    async createPaymentIntent(userId: string, orderId: string) {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-        });
-
-        if (!order) throw new NotFoundException('Order not found');
-
+    async createPaymentIntent(userId: string, orderId: string, total: Decimal) {
         const provider = this.provider();
 
-        const amountInCents = Math.round(order.total.toNumber() * 100);
+        const amountInCents = Math.round(total.toNumber() * 100);
         const result = await provider.createPaymentIntent({
             orderId,
             amount: amountInCents,
@@ -44,41 +39,84 @@ export class PaymentsService {
             data: {
                 orderId,
                 userId,
-                transactionId: result.clientSecret,
-                amount: order.total,
+                externalPaymentId: result.paymentIntentId,
+                amount: total,
                 provider: 'stripe',
                 status: PaymentStatus.PENDING,
+                metadata: {
+                    userId,
+                    clientSecret: result.clientSecret,
+                },
             },
         });
 
         return result;
     }
 
-    async createPaymentLink(userId: string, paymentLinkDto: CreatePaymentLinkDto ) {
-        const product = await this.prisma.product.findUnique({
-            where: { id: paymentLinkDto.productId },
-        });
+    // async createPaymentLink(userId: string, paymentLinkDto: CreatePaymentLinkDto) {
+    //     const product = await this.prisma.product.findUnique({
+    //         where: { id: paymentLinkDto.productId },
+    //     });
 
-        if (!product) throw new NotFoundException('Product not found');
+    //     if (!product) throw new NotFoundException('Product not found');
+
+    //     const provider = this.provider();
+
+    //     const order = await this.ordersService.createOrderFromSingleProduct(product, paymentLinkDto.quantity, JSON.stringify(paymentLinkDto.shippingAddress), userId)
+
+    //     const pl = await provider.createPaymentLink({
+    //         priceId: product.stripePriceId,
+    //         quantity: paymentLinkDto.quantity,
+    //         customerEmail: paymentLinkDto.email,
+    //         metadata: {
+    //             orderId: order.id,
+    //             productId: paymentLinkDto.productId,
+    //             quantity: paymentLinkDto.quantity.toString(),
+    //         },
+    //     });
+
+    //     await this.ordersService.attachSessionIdToOrder(order.id, pl.sessionId)
+
+    //     return pl
+    // }
+
+    async createPaymentLink(email: string, orderId: string, stripePriceId: string, quantity: number, userId?: string) {
 
         const provider = this.provider();
-
-        const order = await this.ordersService.createSingleProductOrder(product, paymentLinkDto.quantity, JSON.stringify(paymentLinkDto.shippingAddress), userId)
-
-        const pl = await provider.createPaymentLink({
-            priceId: product.stripePriceId,
-            quantity: paymentLinkDto.quantity,
-            customerEmail: paymentLinkDto.email,
-            metadata: { 
-                orderId: order.id,
-                productId: paymentLinkDto.productId, 
-                quantity: paymentLinkDto.quantity.toString(),
+        const paymentLink = await provider.createPaymentLink({
+            priceId: stripePriceId,
+            quantity: quantity,
+            customerEmail: email,
+            metadata: {
+                orderId: orderId,
+                sellableProductId: stripePriceId,
             },
         });
 
-        await this.ordersService.attachSessionIdToOrder(order.id, pl.sessionId)
+        await this.prisma.payment.create({
+            data: {
+                orderId,
+                userId,
+                externalPaymentId: paymentLink.sessionId,
+                amount: new Decimal(paymentLink.amount!).dividedBy(100).toDecimalPlaces(2),
+                provider: 'stripe',
+                status: PaymentStatus.PENDING,
+                metadata: {
+                    userId,
+                    sessionUrl: paymentLink.sessionUrl,
+                },
+            },
+        });
 
-        return pl
+        return paymentLink
+    }
+
+    async findByOrderIds(orderIds: string[]) {
+        return this.prisma.payment.findMany({
+            where: {
+                orderId: { in: orderIds },
+            },
+        });
     }
 
     async createSellableProduct(input: {
@@ -158,53 +196,93 @@ export class PaymentsService {
         return { received: true };
     }
 
-    private async handleWebhookCases(event : any) {
+    private async handleWebhookCases(event: any) {
         switch (event.type) {
-        case 'payment_intent.succeeded':
-            await this.paymentSucceeded(event);
-            break;
+            case 'payment_intent.succeeded':
+                await this.paymentSucceeded(event);
+                break;
 
-        case 'payment_intent.payment_failed':
-            await this.paymentIntentFailed(event);
-            break;
+            case 'payment_intent.payment_failed':
+                await this.paymentIntentFailed(event);
+                break;
 
-        case 'checkout.session.completed':
-            await this.paymentSucceeded(event);
-            break;
+            case 'payment_intent.canceled':
+                await this.paymentIntentCanceled(event);
+                break;
 
-        case 'checkout.session.expired':
-            await this.paymentSessionFailed(event);
-            break;
+            case 'checkout.session.completed':
+                await this.paymentSessionSucceeded(event);
+                break;
+
+            case 'checkout.session.expired':
+                await this.paymentSessionFailed(event);
+                break;
 
         }
     }
 
     private async paymentSucceeded(event: any) {
-        const metadata = this.stripeProvider.getMetadata(event)
-
+        const metadata = event.data.object.metadata
+        if (metadata.orderId === undefined) {
+            return;
+        }
         const order = await this.prisma.order.update({
             where: { id: metadata.orderId },
             data: { status: OrderStatus.PAID },
+        });
+
+        await this.prisma.payment.updateMany({
+            where: { orderId: metadata.orderId, status: PaymentStatus.PENDING },
+            data: { status: PaymentStatus.SUCCEEDED },
+        });
+
+        if (order.userId) {
+            await this.prisma.cart.updateMany({
+                where: { status: CartStatus.ACTIVE, userId: order.userId },
+                data: { status: CartStatus.ORDERED },
+            });
+        }
+
+        await this.productLikesService.notifyLowStockToInterestedUsers(order.id)
+    }
+
+    private async paymentSessionSucceeded(event: any) {
+        const metadata = event.data.object.metadata
+
+        if (!metadata || !metadata.orderId) {
+            console.error("Metadata has no orderId");
+            return;
+        }
+
+        const order = await this.prisma.order.update({
+            where: { id: metadata!.orderId },
+            data: { status: OrderStatus.PAID },
+        });
+
+        await this.prisma.payment.updateMany({
+            where: { orderId: metadata!.orderId, status: PaymentStatus.PENDING },
+            data: { status: PaymentStatus.SUCCEEDED },
         });
 
         await this.productLikesService.notifyLowStockToInterestedUsers(order.id)
     }
 
     private async paymentIntentFailed(event: any) {
-        const metadata = this.stripeProvider.getMetadata(event)
+        // Just log for now; cancellation happens via .canceled or session expiry.
+        console.log('Payment intent failed, awaiting definitive cancellation or retry:', event.id);
+    }
 
-        await this.prisma.order.update({
-            where: { id: metadata.orderId },
-            data: { status: OrderStatus.PENDING },
-        });
+    private async paymentIntentCanceled(event: any) {
+        const metadata = this.stripeProvider.getMetadata(event);
+        if (metadata.orderId) {
+            await this.ordersService.restoreOrderStock(metadata.orderId);
+        }
     }
 
     private async paymentSessionFailed(event: any) {
-        const metadata = this.stripeProvider.getMetadata(event)
-
-        await this.prisma.order.update({
-            where: { id: metadata.orderId },
-            data: { status: OrderStatus.CANCELLED },
-        });
+        const metadata = this.stripeProvider.getMetadata(event);
+        if (metadata.orderId) {
+            await this.ordersService.restoreOrderStock(metadata.orderId);
+        }
     }
 }

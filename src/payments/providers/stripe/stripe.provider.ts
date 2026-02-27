@@ -18,6 +18,10 @@ export class StripeProvider implements PaymentProvider {
             amount: Math.round(amount * 100),
             currency,
             metadata: { orderId },
+            automatic_payment_methods: {
+                enabled: true,
+                allow_redirects: 'never',
+            },
         });
 
         if (!intent.client_secret) {
@@ -52,19 +56,20 @@ export class StripeProvider implements PaymentProvider {
 
 
             success_url:
-            'https://example.com/success?session_id={CHECKOUT_SESSION_ID}',
+                'https://example.com/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url: 'https://example.com/cancel',
         });
 
         if (!session.url) {
             throw new InternalServerErrorException(
-            'Stripe could not generate a checkout URL',
+                'Stripe could not generate a checkout URL',
             );
         }
 
         return {
             sessionUrl: session.url,
             sessionId: session.id,
+            amount: session.amount_total,
         };
     }
 
@@ -90,21 +95,21 @@ export class StripeProvider implements PaymentProvider {
             name,
             description,
         })
-        return {id: product.id}
+        return { id: product.id }
     }
 
     async archivePrice(priceId: string) {
         const price = await this.stripe.prices.update(priceId, {
             active: false,
         })
-        return {id: price.id}
+        return { id: price.id }
     }
 
     async archiveProduct(productId: string) {
         const product = await this.stripe.products.update(productId, {
             active: false,
         })
-        return {id: product.id}
+        return { id: product.id }
     }
 
     async refund(paymentIntentId: string) {
@@ -121,9 +126,16 @@ export class StripeProvider implements PaymentProvider {
         );
     }
 
-    getMetadata(event : Stripe.Event) {
+    getMetadata(event: Stripe.Event) {
         const intent = event.data.object as Stripe.PaymentIntent;
         const metadata = intent.metadata
+        return metadata
+    }
+
+    getSessionMetadata(event: Stripe.Event) {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const metadata = session.metadata
+        console.log("metadata", metadata)
         return metadata
     }
 }

@@ -6,19 +6,20 @@ export enum Action {
   Create = 'create',
   Read = 'read',
   Update = 'update',
+  Deliver = 'deliver',
   Delete = 'delete',
   Purchase = 'purchase',
   Cancel = 'cancel',
 }
 
-export type Subjects = 
-  | 'all' 
-  | 'User' 
-  | 'Product' 
-  | 'Order' 
-  | 'PromoCode' 
-  | 'Like' 
-  | 'Cart' 
+export type Subjects =
+  | 'all'
+  | 'User'
+  | 'Product'
+  | 'Order'
+  | 'PromoCode'
+  | 'Like'
+  | 'Cart'
   | InferSubjects<User | Product | Order | PromoCode | ProductLike | Cart>;
 
 export type AppAbility = PureAbility<[Action, Subjects]>;

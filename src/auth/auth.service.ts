@@ -23,7 +23,7 @@ export class AuthService {
         private readonly configService: ConfigService,
         private readonly usersService: UsersService,
         private readonly mailService: MailService
-    ) {}
+    ) { }
 
     async validateUser(email: string, password: string) {
         const user = await this.usersService.findByEmail(email);
@@ -37,18 +37,39 @@ export class AuthService {
 
     async signup(input: SignUpDto) {
         const hashedPassword = await bcrypt.hash(input.password, 10);
-        const user = await this.usersService.createUser({...input, password: hashedPassword});
-        const token = await this.createEmailVerificationToken(user.id!);
-        const verificationUrl = `${this.configService.get('SERVER_HOST')}/auth/verify-email?token=${token}`;
-        await this.mailService.sendConfirmationEmail(user.firstName?? user.email!, user.email!, verificationUrl);
+        const user = await this.usersService.createUser({
+            ...input,
+            password: hashedPassword
+        });
+
+        const { url: verificationUrl } = await this.createEmailVerificationToken(user.id!);
+
+        try {
+            await this.mailService.sendConfirmationEmail(
+                user.firstName ?? user.email!,
+                user.email!,
+                verificationUrl
+            );
+        } catch (error) {
+        }
+
+        return {
+            message: 'User registered successfully. Please check your email for verification.',
+            email: user.email,
+        };
     }
 
-    async createEmailVerificationToken(userId: string): Promise<string> {
+    private getVerificationUrl(token: string): string {
+        const serverHost = this.configService.get('SERVER_HOST');
+        return `${serverHost}/auth/verify-email?token=${token}`;
+    }
+
+    async createEmailVerificationToken(userId: string): Promise<{ token: string, url: string }> {
         const token = uuidv4();
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 24);
 
-        await this.prismaService.emailVerification.create({   
+        await this.prismaService.emailVerification.create({
             data: {
                 token: token,
                 userId,
@@ -56,7 +77,9 @@ export class AuthService {
             }
         });
 
-        return token;
+        const url = this.getVerificationUrl(token);
+
+        return { token, url };
     }
 
     async verifyEmail(token: string) {
@@ -72,13 +95,13 @@ export class AuthService {
 
         await this.usersService.markAsVerified(verificationToken.userId);
 
-        await this.prismaService.emailVerification.delete({ where: {id: verificationToken.id}});
+        await this.prismaService.emailVerification.delete({ where: { id: verificationToken.id } });
 
         return { message: 'Email verified' };
     }
 
     async generateAccessToken(userId: string) {
-        const payload : JwtPayload = { sub: userId };
+        const payload: JwtPayload = { sub: userId };
 
         const accessToken = this.jwtService.sign(payload, {
             secret: this.configService.get('JWT_ACCESS_SECRET'),
@@ -90,7 +113,7 @@ export class AuthService {
 
     async generateAndSaveRefreshToken(userId: string) {
         const sessionId = crypto.randomUUID();
-        const payload : JwtRefreshPayload = { sub: userId, sid: sessionId };
+        const payload: JwtRefreshPayload = { sub: userId, sid: sessionId };
 
         const refreshExpiresInStr = this.configService.get('JWT_REFRESH_EXPIRES')
 
@@ -101,7 +124,7 @@ export class AuthService {
 
         const expiresAt = new Date(Date.now() + ms(refreshExpiresInStr));
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-        
+
         await this.prismaService.userSession.create({
             data: {
                 id: sessionId,
@@ -135,7 +158,7 @@ export class AuthService {
 
         const accessToken = await this.generateAccessToken(user.id);
         const refreshToken = await this.generateAndSaveRefreshToken(user.id)
-        
+
 
         return {
             accessToken: accessToken,
@@ -147,7 +170,7 @@ export class AuthService {
 
     async refresh(input: RefreshTokenDto): Promise<AuthResponseDto> {
 
-        const payload : JwtRefreshPayload = this.jwtService.verify(input.refreshToken, { 
+        const payload: JwtRefreshPayload = this.jwtService.verify(input.refreshToken, {
             secret: this.configService.get('JWT_REFRESH_SECRET'),
         });
 
@@ -155,8 +178,8 @@ export class AuthService {
             throw new UnauthorizedException('Invalid or expired refresh token');
         }
 
-        const session = await this.prismaService.userSession.findFirst({ 
-            where: { id: payload.sid, isRevoked: false} 
+        const session = await this.prismaService.userSession.findFirst({
+            where: { id: payload.sid, isRevoked: false }
         });
 
         if (!session || session.isRevoked) {
@@ -222,7 +245,7 @@ export class AuthService {
 
         const resetUrl = `${this.configService.get('SERVER_HOST')}/auth/reset-password?token=${resetToken}`;
         await this.mailService.sendResetPasswordEmail(user.email, resetUrl);
-        
+
         return { resetUrl };
     }
 
@@ -234,7 +257,8 @@ export class AuthService {
                 expiresAt: { gt: new Date() },
                 usedAt: null,
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { user: true }
         });
 
         if (!resetRequest) throw new UnauthorizedException('Invalid request');
@@ -244,7 +268,7 @@ export class AuthService {
         }
 
         const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-        
+
         await this.prismaService.$transaction([
             this.prismaService.user.update({
                 where: { id: resetRequest.userId },
@@ -255,6 +279,8 @@ export class AuthService {
                 data: { usedAt: new Date() }
             })
         ]);
+
+        await this.mailService.sendPasswordChangedEmail(resetRequest.user.email, resetRequest.user.firstName || resetRequest.user.email);
 
         return { message: 'Password reset successful' };
     }
@@ -281,6 +307,8 @@ export class AuthService {
                 data: { isRevoked: true },
             })
         ]);
+
+        await this.mailService.sendPasswordChangedEmail(user.email, user.firstName || user.email);
 
         return { message: 'Password Changed' };
     }

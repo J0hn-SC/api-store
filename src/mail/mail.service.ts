@@ -4,7 +4,7 @@ import type { Queue } from 'bull';
 
 @Injectable()
 export class MailService {
-    constructor(@InjectQueue('mail-queue') private readonly mailQueue: Queue) {}
+    constructor(@InjectQueue('mail-queue') private readonly mailQueue: Queue) { }
 
     async sendConfirmationEmail(name: string, email: string, url: string) {
         await this.mailQueue.add('send-mail', {
@@ -17,6 +17,13 @@ export class MailService {
         await this.mailQueue.add('send-mail', {
             type: 'reset-password',
             data: { email, url },
+        });
+    }
+
+    async sendPasswordChangedEmail(email: string, name: string) {
+        await this.mailQueue.add('send-mail', {
+            type: 'password-changed',
+            data: { email, name },
         });
     }
 

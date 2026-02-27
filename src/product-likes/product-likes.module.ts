@@ -5,6 +5,6 @@ import { ProductLikesLoaderService } from './product-likes-loader.service';
 
 @Module({
   providers: [ProductLikesResolver, ProductLikesLoaderService, ProductLikesService],
-  exports: [ProductLikesLoaderService]
+  exports: [ProductLikesLoaderService, ProductLikesService]
 })
-export class ProductLikesModule {}
+export class ProductLikesModule { }

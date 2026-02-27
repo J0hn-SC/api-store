@@ -59,10 +59,9 @@ enum CartStatus {
 
 enum PaymentStatus {
   PENDING
-  AUTHORIZED
-  CAPTURED
+  SUCCEEDED
   FAILED
-  REFUNDED
+  CANCELLED
 }
 
 enum ReservationStatus {
@@ -89,7 +88,7 @@ model User {
   passwordResets  PasswordReset[]
   orders          Order[]
   addresses       Address[]
-  cart            Cart?
+  cart            Cart[]
   likedProducts   ProductLike[]
   assignedOrders  Order[]   @relation("DeliveryAssigned")
   payments        Payment[]
@@ -97,14 +96,17 @@ model User {
 }
 
 model Address {
-  id          String   @id @default(uuid())
-  address     String
-  city        String
-  country     String
-  phoneNumber String?
-  postalCode  String?
+  id               String   @id @default(uuid())
+  addressLine1     String
+  addressLine2     String?
+  city             String
+  stateProvince    String
+  postalCode       String?
+  countryCode      String
   
-  userId      String   @unique
+  phoneNumber      String?
+
+  userId      String   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
@@ -226,7 +228,7 @@ model PromoCode {
 
 model Cart {
   id        String          @id @default(uuid())
-  userId    String          @unique
+  userId    String          //@unique
   status    CartStatus      @default(ACTIVE)
   promoCodeId   String?
 
@@ -273,15 +275,30 @@ model Order {
   deliveryUserId    String?
   deliveryUser      User?        @relation("DeliveryAssigned", fields: [deliveryUserId], references: [id])
 
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  user            User?          @relation(fields: [userId], references: [id])
-  items            OrderItem[]
-  statusHistory    OrderStatusHistory[]
-  payments        Payment[]
+  user              User?          @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+  address           OrderAddress?
+  payments          Payment[]
 }
 
+model OrderAddress {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  fullName        String
+  email           String  
+  phoneNumber     String?
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  stateProvince   String
+  postalCode      String
+  countryCode     String
+
+  order      Order    @relation(fields: [orderId], references: [id])
+}
 
 model OrderItem {
   id         String   @id @default(uuid())
@@ -296,31 +313,20 @@ model OrderItem {
   product    Product  @relation(fields: [productId], references: [id])
 }
 
-
-model OrderStatusHistory {
-  id        String       @id @default(uuid())
-  orderId   String
-  status    OrderStatus
-  changedBy String?      // userId
-  createdAt DateTime     @default(now())
-
-  order     Order        @relation(fields: [orderId], references: [id])
-}
-
 model Payment {
   id                String        @id @default(uuid())
   orderId           String
   order             Order         @relation(fields: [orderId], references: [id])
-  userId            String
-  user              User         @relation(fields: [userId], references: [id])
-  transactionId     String?
+  userId            String?       //opcional for payments from guess users
+  user              User?         @relation(fields: [userId], references: [id])
+  externalPaymentId String?
   amount            Decimal       @db.Decimal(10,2)
   currency          String        @default("USD")
-  paymentMethodType   String?
-  provider            String      @default("Stripe")
-  status            PaymentStatus // PENDING, AUTHORIZED, CAPTURED, REFUNDED
-  gatewayResponse   Json?         
+  paymentMethodType   String?     // 'credit_card', 'paypal', 'bank_transfer'
+  provider            String      @default("stripe") //'stripe', 'paypal', 'cash'
+  status            PaymentStatus // PENDING, SUCCEEDED, FAILED, CANCELLED
+  metadata          Json?         
   errorCode         String?
   createdAt         DateTime      @default(now())
-
+  updatedAt         DateTime      @updatedAt
 }

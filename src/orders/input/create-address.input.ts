@@ -3,25 +3,33 @@ import { IsAlpha, IsOptional, IsPhoneNumber, IsString, Length, MaxLength } from 
 
 @InputType()
 export class CreateAddressInput {
+    @Field()
+    @IsString()
+    @Length(2, 100)
+    addressLine1: string;
+
     @Field({ nullable: true })
-    @IsOptional()
-    @IsString()
-    @Length(2, 100)
-    name?: string;
-
     @Field()
     @IsString()
     @Length(2, 100)
-    address: string;
-
-    @Field()
-    @IsString()
-    @IsAlpha()
-    country: string;
+    addressLine2?: string;
 
     @Field()
     @IsString()
     city: string;
+
+    @Field()
+    @IsString()
+    stateProvince: string;
+
+    @Field()
+    @IsString()
+    @Field({ nullable: true })
+    postalCode: string;
+
+    @Field()
+    @IsString()
+    countryCode: string;
 
     @Field({ nullable: true })
     @IsOptional()

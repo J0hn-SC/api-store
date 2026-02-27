@@ -20,5 +20,5 @@ export class CreateOrderInput {
     @IsOptional()
     @ValidateNested()
     @Type(() => CreateAddressInput)
-    newAddress?: CreateAddressInput;
+    address?: CreateAddressInput;
 }

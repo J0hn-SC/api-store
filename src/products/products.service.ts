@@ -14,10 +14,10 @@ import { Decimal } from '@prisma/client/runtime/client';
 @Injectable()
 export class ProductsService {
     constructor(
-        private readonly prisma: PrismaService, 
+        private readonly prisma: PrismaService,
         private readonly s3Service: S3Service,
         private readonly paymentsService: PaymentsService,
-    ) {}
+    ) { }
 
     async create(input: CreateProductInput) {
         const stripeData = await this.paymentsService.createSellableProduct({
@@ -27,9 +27,10 @@ export class ProductsService {
             currency: 'usd',
         })
         return this.prisma.product.create({
-            data: {...input, 
-                stripeProductId: stripeData.productId, 
-                stripePriceId: stripeData.priceId, 
+            data: {
+                ...input,
+                stripeProductId: stripeData.productId,
+                stripePriceId: stripeData.priceId,
             },
         });
     }
@@ -40,13 +41,13 @@ export class ProductsService {
 
         let stripeData;
         const inputPrice = input.price ? new Decimal(input.price) : null;
-        if ((inputPrice && !inputPrice.eq(product.price ?? 0)) || 
-        ( input.name && input.name !== product.name)) {
+        if ((inputPrice && !inputPrice.eq(product.price ?? 0)) ||
+            (input.name && input.name !== product.name)) {
             stripeData = await this.paymentsService.updateSellableProduct({
                 productId: product.stripeProductId,
                 name: input.name ?? product.name,
                 description: input.description ? input.description : product.description,
-                price: Math.round(Number(input.price) * 100),
+                price: Math.round(Number(input.price ?? product.price) * 100),
                 currency: 'usd',
             });
         }
@@ -68,28 +69,28 @@ export class ProductsService {
         if (!product) throw new ConflictException('Product not found');
 
         await this.paymentsService.disabledSellableProduct({
-            productId: product.stripeProductId, 
+            productId: product.stripeProductId,
             priceId: product.stripePriceId
         })
 
         return this.prisma.product.update({
             where: { id },
-            data: { status : EntityStatus.DISABLED },
+            data: { status: EntityStatus.DISABLED },
         });
     }
 
     async delete(id: string) {
         const product = await this.prisma.product.findUnique({ where: { id } });
         if (!product) throw new ConflictException('Product not found');
-        
+
         await this.paymentsService.disabledSellableProduct({
-            productId: product.stripeProductId, 
+            productId: product.stripeProductId,
             priceId: product.stripePriceId
         })
 
         return this.prisma.product.update({
             where: { id },
-            data: { deletedAt : Date() },
+            data: { deletedAt: Date() },
         });
     }
 
@@ -140,21 +141,21 @@ export class ProductsService {
 
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(mimetype)) throw new ConflictException('Invalid type file');
-        
+
         const path = await this.s3Service.uploadFile(createReadStream(), {
             filename,
             mimeType: mimetype,
             folder: 'products',
         });
 
-        try{
-            return this.prisma.productImage.create({
+        try {
+            return await this.prisma.productImage.create({
                 data: {
                     url: path,
                     productId: id,
                 },
             });
-        }catch (error) {
+        } catch (error) {
             await this.s3Service.deleteFile(path);
             if (error.code === 'P2003') {
                 throw new BadRequestException(`The product with id ${id} doesn't exist`);
@@ -163,7 +164,7 @@ export class ProductsService {
         }
     }
 
-    async getProductImages(id: string){
+    async getProductImages(id: string) {
         return this.prisma.productImage.findMany({
             where: { productId: id },
         });

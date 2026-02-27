@@ -5,44 +5,44 @@ import { Role } from '@prisma/client';
 
 @Injectable()
 export class CaslAbilityFactory {
-  createForUser(user: any): AppAbility {
-    const { can, cannot, build } = new AbilityBuilder<AppAbility>(PureAbility as any);
+    createForUser(user: any): AppAbility {
+        const { can, cannot, build } = new AbilityBuilder<AppAbility>(PureAbility as any);
 
-    if (user.role === Role.MANAGER) {
-        can(Action.Manage, 'Product');
-        can(Action.Manage, 'PromoCode');
+        if (user.role === Role.MANAGER) {
+            can(Action.Manage, 'Product');
+            can(Action.Manage, 'PromoCode');
 
-        can(Action.Read, 'Order');
-        can(Action.Update, 'Order');
-    }
+            can(Action.Read, 'Order');
+            can(Action.Update, 'Order');
+        }
 
-    else if (user.role === Role.CLIENT) {
-        
-        can(Action.Read, 'Product', { isActive: true });
-        can(Action.Purchase, 'Product');
+        else if (user.role === Role.CLIENT) {
 
-        can(Action.Manage, 'Like', { userId: user.id });
+            can(Action.Read, 'Product', { isActive: true });
+            can(Action.Purchase, 'Product');
 
-        can(Action.Manage, 'Cart', { userId: user.id });
+            can(Action.Manage, 'Like', { userId: user.id });
 
-        can(Action.Create, 'Order');
-        can(Action.Read, 'Order', { userId: user.id });
-        can(Action.Cancel, 'Order', { 
-            userId: user.id, 
-            status: { $in: ['pending', 'paid', 'processing'] } 
+            can(Action.Manage, 'Cart', { userId: user.id });
+
+            can(Action.Create, 'Order');
+            can(Action.Read, 'Order', { userId: user.id });
+            can(Action.Cancel, 'Order', {
+                userId: user.id,
+                status: { $in: ['pending', 'paid', 'processing'] }
+            });
+
+            can(Action.Read, 'PromoCode');
+        }
+
+        if (user.role === Role.DELIVERY) {
+            can(Action.Read, 'Order', { status: { $in: ['SHIPPED', 'DELIVERED'] } });
+            can(Action.Deliver, 'Order', { status: 'SHIPPED' });
+        }
+
+        return build({
+            conditionsMatcher: mongoQueryMatcher,
+            detectSubjectType: (item) => item.constructor?.name || (item as any).__typename,
         });
-
-        can(Action.Read, 'PromoCode');
     }
-
-    if (user.role === Role.DELIVERY) {
-        can(Action.Read, 'Order', { status: 'shipped' });
-        can(Action.Update, 'Order', { status: 'shipped' });
-    }
-
-    return build({
-        conditionsMatcher: mongoQueryMatcher,
-        detectSubjectType: (item) => item.constructor?.name || (item as any).__typename,
-    });
-  }
 }

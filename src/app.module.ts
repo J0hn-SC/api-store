@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { CaslModule } from './casl/casl.module';
@@ -19,6 +19,9 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { MailModule } from './mail/mail.module';
 import { BullModule } from '@nestjs/bull';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { GqlThrottlerGuard } from './common/guards/gql-throttler.guard';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 
 @Module({
@@ -28,6 +31,18 @@ import { BullModule } from '@nestjs/bull';
       load: [configuration],
       validationSchema,
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: config.get<number>('RATE_LIMIT_TTL') || 60000,
+            limit: config.get<number>('RATE_LIMIT_LIMIT') || 10,
+          },
+        ],
+      }),
+    }),
     PrismaModule,
     AuthModule,
     CaslModule,
@@ -36,26 +51,20 @@ import { BullModule } from '@nestjs/bull';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
+      context: ({ req, res }) => ({ req, res }),
     }),
     S3Module,
     ProductLikesModule,
     PromoCodesModule,
     CartsModule,
     OrdersModule,
-    // BullModule.forRoot({
-    //   redis: {
-    //     host: 'localhost',
-    //     port: 6379,
-    //   },
-    // }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          // En local será 'localhost', en Heroku será algo como 'redis-123.upstash.io'
           host: configService.get('REDIS_HOST') || 'localhost',
           port: configService.get('REDIS_PORT') || 6379,
-          password: configService.get('REDIS_PASSWORD'), // Importante para Redis Web
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
@@ -67,8 +76,16 @@ import { BullModule } from '@nestjs/bull';
   providers: [
     {
       provide: APP_GUARD,
+      useClass: GqlThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

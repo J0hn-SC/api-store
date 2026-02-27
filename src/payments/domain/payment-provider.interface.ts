@@ -10,7 +10,7 @@ export interface PaymentProvider {
         quantity: number;
         metadata?: Record<string, string>;
         customerEmail: string;
-    }): Promise<{ sessionUrl: string, sessionId: string }>;
+    }): Promise<{ sessionUrl: string, sessionId: string, amount: number | null }>;
 
     createProduct(input: {
         name: string

@@ -6,11 +6,11 @@ import { PromoCodesService } from 'src/promo-codes/promo-codes.service';
 
 @Injectable()
 export class CartsService {
-    constructor(private readonly prisma: PrismaService, private readonly promoCodeService: PromoCodesService) {}
+    constructor(private readonly prisma: PrismaService, private readonly promoCodeService: PromoCodesService) { }
 
     async getOrCreateActiveCart(userId: string) {
         let cart = await this.prisma.cart.findFirst({
-            where: { userId, status: CartStatus.ACTIVE},
+            where: { userId, status: CartStatus.ACTIVE },
         });
 
         cart ??= await this.prisma.cart.create({
@@ -22,15 +22,17 @@ export class CartsService {
 
     async getActiveCart(userId: string) {
         let cart = await this.prisma.cart.findFirst({
-            where: { userId, status: CartStatus.ACTIVE},
-            include: {items : {
-                include: {
-                    product: true
+            where: { userId, status: CartStatus.ACTIVE },
+            include: {
+                items: {
+                    include: {
+                        product: true
+                    }
                 }
-            }}
+            }
         });
 
-        if(cart)
+        if (cart)
             return cart;
 
         throw new NotFoundException('Cart Not Found')
@@ -45,7 +47,7 @@ export class CartsService {
             },
         });
 
-        if(!product)
+        if (!product)
             throw new NotFoundException('Product not found');
 
         const cart = await this.getOrCreateActiveCart(userId);
@@ -61,10 +63,10 @@ export class CartsService {
 
 
         if (existingItem) {
-            if(product.stock < existingItem.quantity + quantity)
+            if (product.stock < existingItem.quantity + quantity)
                 throw new ConflictException('Quantity of item exceeds available stock')
-            
-            await  this.prisma.cartItem.update({
+
+            await this.prisma.cartItem.update({
                 where: { id: existingItem.id },
                 data: { quantity: existingItem.quantity + quantity },
             });
@@ -73,7 +75,7 @@ export class CartsService {
             return cart
         }
 
-        if(product.stock < quantity)
+        if (product.stock < quantity)
             throw new ConflictException('Quantity of item exceeds available stock')
         await this.prisma.cartItem.create({
             data: {
@@ -87,12 +89,12 @@ export class CartsService {
 
     async updateItem(userId: string, itemId: string, quantity: number) {
         const item = await this.prisma.cartItem.findUnique({
-            where: { id: itemId, cart: {userId: userId } },
+            where: { id: itemId, cart: { userId: userId } },
             include: { cart: true },
         });
 
         if (!item || item.cart.userId !== userId)
-        throw new NotFoundException('Item not found');
+            throw new NotFoundException('Item not found');
 
         const product = await this.prisma.product.findUnique({
             where: {
@@ -101,10 +103,10 @@ export class CartsService {
             },
         });
 
-        if(!product)
+        if (!product)
             throw new NotFoundException('Product not found');
 
-        if(product.stock < quantity)
+        if (product.stock < quantity)
             throw new ConflictException('Quantity of item exceeds available stock')
 
         return this.prisma.cartItem.update({
@@ -115,12 +117,12 @@ export class CartsService {
 
     async removeItem(userId: string, itemId: string) {
         const item = await this.prisma.cartItem.findUnique({
-            where: { id: itemId, cart: {userId: userId } },
+            where: { id: itemId, cart: { userId: userId } },
             include: { cart: true },
         });
 
         if (!item || item.cart.userId !== userId)
-        throw new NotFoundException('Item not found');
+            throw new NotFoundException('Item not found');
 
         await this.prisma.cartItem.delete({ where: { id: itemId } });
 
@@ -150,15 +152,22 @@ export class CartsService {
     }
 
     async validatePromoCode(userId: string, code: string) {
-        const promoCode = await this.promoCodeService.validatePromoCode(code)
-        const cart = await this.getOrCreateActiveCart(userId);
+        const cart = await this.getActiveCart(userId);
+
+        const subtotal = cart.items.reduce(
+            (acc, item) => (item.product.price as any).times(item.quantity).plus(acc),
+            new (require('decimal.js').Decimal)(0)
+        );
+
+        const promoCode = await this.promoCodeService.validatePromoCode(code, subtotal);
+
         if (promoCode) {
             let newCart = await this.prisma.cart.update({
-                where: { id : cart.id },
+                where: { id: cart.id },
                 data: { promoCodeId: promoCode.id },
             });
             return newCart
-            
+
         }
         return cart
     }

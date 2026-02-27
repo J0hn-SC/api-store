@@ -15,9 +15,9 @@ export class OrderEntity {
     @IsNumber()
     orderNumber: number;
 
-    @Field()
+    @Field(() => String, { nullable: true })
     @IsUUID()
-    userId: string;
+    userId: string | null;
 
     @Field(() => OrderStatus)
     @IsEnum(OrderStatus)
@@ -52,6 +52,11 @@ export class OrderEntity {
     @IsString()
     promoCodeSnapshot: string;
 
+    @Field({ nullable: true })
+    @IsOptional()
+    @IsString()
+    shippingAddressSnapshot: string;
+
     // @Field(() => PaymentMethod)
     // @IsEnum(PaymentMethod)
     // paymentMethod: string;
@@ -84,6 +89,10 @@ export class OrderEntity {
     // @IsDate()
     // updatedAt: Date;
 
-    @Field({ nullable: true }) // Importante: nullable porque no siempre existirá
+    //Optional fields for payment
+    @Field({ nullable: true })
     clientSecret?: string;
+
+    @Field({ nullable: true })
+    sessionUrl?: string;
 }
