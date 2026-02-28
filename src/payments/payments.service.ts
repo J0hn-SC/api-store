@@ -53,33 +53,6 @@ export class PaymentsService {
         return result;
     }
 
-    // async createPaymentLink(userId: string, paymentLinkDto: CreatePaymentLinkDto) {
-    //     const product = await this.prisma.product.findUnique({
-    //         where: { id: paymentLinkDto.productId },
-    //     });
-
-    //     if (!product) throw new NotFoundException('Product not found');
-
-    //     const provider = this.provider();
-
-    //     const order = await this.ordersService.createOrderFromSingleProduct(product, paymentLinkDto.quantity, JSON.stringify(paymentLinkDto.shippingAddress), userId)
-
-    //     const pl = await provider.createPaymentLink({
-    //         priceId: product.stripePriceId,
-    //         quantity: paymentLinkDto.quantity,
-    //         customerEmail: paymentLinkDto.email,
-    //         metadata: {
-    //             orderId: order.id,
-    //             productId: paymentLinkDto.productId,
-    //             quantity: paymentLinkDto.quantity.toString(),
-    //         },
-    //     });
-
-    //     await this.ordersService.attachSessionIdToOrder(order.id, pl.sessionId)
-
-    //     return pl
-    // }
-
     async createPaymentLink(email: string, orderId: string, stripePriceId: string, quantity: number, userId?: string) {
 
         const provider = this.provider();

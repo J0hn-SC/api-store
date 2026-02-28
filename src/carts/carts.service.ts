@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CartStatus } from './enums/cart-status.enum';
-import { EntityStatus } from '@prisma/client';
+import { EntityStatus, Prisma } from '@prisma/client';
 import { PromoCodesService } from 'src/promo-codes/promo-codes.service';
 
 @Injectable()
@@ -156,7 +156,7 @@ export class CartsService {
 
         const subtotal = cart.items.reduce(
             (acc, item) => (item.product.price as any).times(item.quantity).plus(acc),
-            new (require('decimal.js').Decimal)(0)
+            new Prisma.Decimal(0)
         );
 
         const promoCode = await this.promoCodeService.validatePromoCode(code, subtotal);
